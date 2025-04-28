@@ -36,13 +36,12 @@ type DatabaseConfig struct {
 }
 
 type MqttConfig struct {
-	Host          string
-	Port          int
-	ClientId      string
-	Username      string
-	Password      string
-	BaseTopic     string
-	DefaultTopics []string
+	Host      string
+	Port      int
+	ClientId  string
+	Username  string
+	Password  string
+	BaseTopic string
 }
 
 func Load() (*Config, error) {
@@ -67,21 +66,20 @@ func Load() (*Config, error) {
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnvAsInt("DB_PORT", 8000),
-			User:     getEnv("DB_USER", ""),
+			Port:     getEnvAsInt("DB_PORT", 5432),
+			User:     getEnv("DB_USERNAME", ""),
 			Password: getEnv("DB_PASSWORD", ""),
-			Database: getEnv("DB_DATABASE", "devices"),
+			Database: getEnv("DB_DATABASE", "gps_no"),
 			SSLMode:  getEnvAsBool("DB_SSL_MODE", false),
 			TimeZone: getEnv("DB_TIME_ZONE", "UTC"),
 		},
 		Mqtt: MqttConfig{
-			Host:          getEnv("MQTT_HOST", "localhost"),
-			Port:          getEnvAsInt("MQTT_PORT", 1883),
-			ClientId:      getEnv("MQTT_CLIENT_ID", "client"),
-			Username:      getEnv("MQTT_USERNAME", ""),
-			Password:      getEnv("MQTT_PASSWORD", ""),
-			BaseTopic:     getEnv("MQTT_BASE_TOPIC", "gps_no"),
-			DefaultTopics: getEnvAsStringArray("MQTT_DEFAULT_TOPICS", []string{"gpsno/devices/+/raw"}),
+			Host:      getEnv("MQTT_HOST", "localhost"),
+			Port:      getEnvAsInt("MQTT_PORT", 1883),
+			ClientId:  getEnv("MQTT_CLIENT_ID", "client"),
+			Username:  getEnv("MQTT_USERNAME", ""),
+			Password:  getEnv("MQTT_PASSWORD", ""),
+			BaseTopic: getEnv("MQTT_BASE_TOPIC", "gps_no"),
 		},
 	}
 

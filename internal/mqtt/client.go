@@ -4,22 +4,21 @@ import (
 	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"gps-no-server/internal/config"
 	"gps-no-server/internal/logger"
 	"math/rand"
 	"time"
 )
 
-var log zerolog.Logger
-
 type Client struct {
-	client mqtt.Client
-	config *config.MqttConfig
+	client   mqtt.Client
+	config   *config.MqttConfig
+	Registry *Registry
+	log      zerolog.Logger
 }
 
-func Create(cfg *config.MqttConfig) (*Client, error) {
-	log = logger.GetLogger("mqtt")
-
+func Create(cfg *config.MqttConfig, registry *Registry) (*Client, error) {
 	opts := mqtt.NewClientOptions()
 	broker := fmt.Sprintf("tcp://%s:%d", cfg.Host, cfg.Port)
 	randomInt := rand.Intn(16777216)
@@ -45,8 +44,10 @@ func Create(cfg *config.MqttConfig) (*Client, error) {
 	})
 
 	mqttClient := &Client{
-		client: mqtt.NewClient(opts),
-		config: cfg,
+		client:   mqtt.NewClient(opts),
+		config:   cfg,
+		log:      logger.GetLogger("mqtt"),
+		Registry: registry,
 	}
 
 	return mqttClient, nil
@@ -77,4 +78,30 @@ func (c *Client) Disconnect() {
 	}
 
 	c.client.Disconnect(250)
+}
+
+func (c *Client) SubscribeRegistry() error {
+	topics := c.Registry.GetAllTopics()
+
+	for _, topic := range topics {
+		if err := c.Subscribe(topic, c.messageHandler); err != nil {
+			return fmt.Errorf("Failed to subscribe to topic %s: %w", topic, err)
+		}
+		c.log.Info().Msgf("Subscribed to topic %s", topic)
+	}
+
+	return nil
+}
+
+func (c *Client) messageHandler(client mqtt.Client, message mqtt.Message) {
+	topic := message.Topic()
+	handlers := c.Registry.GetAllSubscriptions(topic)
+
+	if len(handlers) > 0 {
+		for _, handler := range handlers {
+			handler.HandleMessage(message)
+		}
+	} else {
+		log.Warn().Msgf("No handler found for topic %s", topic)
+	}
 }
