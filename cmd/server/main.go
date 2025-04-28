@@ -6,8 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"gps-no-server/internal/config"
+	"gps-no-server/internal/database"
 	"gps-no-server/internal/logger"
 	"gps-no-server/internal/mqtt"
+	"gps-no-server/internal/mqtt/subscriptions"
+	"gps-no-server/internal/repository"
 	"net/http"
 	"os"
 	"os/signal"
@@ -25,7 +28,17 @@ func main() {
 	logger.Init(logLevel)
 	log := logger.GetLogger("main")
 
-	mqttClient, err := initMqtt(&cfg.Mqtt)
+	gormDB, err := database.NewGormDB(&cfg.Database)
+	if err != nil {
+		log.Fatal().Err(err).Msg("Failed to initialize database connection")
+	}
+	defer func() {
+		if err := gormDB.Close(); err != nil {
+			log.Error().Err(err).Msg("Error closing database connection")
+		}
+	}()
+
+	mqttClient, err := initMqtt(&cfg.Mqtt, gormDB)
 	if err != nil {
 		log.Error().Msgf("Error while initializing MQTT client: %v", err)
 	}
@@ -91,8 +104,13 @@ func initServer(cfg *config.ServerConfig) (*http.Server, error) {
 	return server, nil
 }
 
-func initMqtt(cfg *config.MqttConfig) (*mqtt.Client, error) {
-	mqttClient, err := mqtt.Create(cfg)
+func initMqtt(cfg *config.MqttConfig, db *database.GormDB) (*mqtt.Client, error) {
+	stationRepository := repository.NewStationRepository(db.DB)
+
+	subscriptionRegistry := mqtt.CreateRegistry()
+	subscriptionRegistry.Register(subscriptions.NewStationSubscription(stationRepository))
+
+	mqttClient, err := mqtt.Create(cfg, subscriptionRegistry)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MQTT client: %w", err)
 	}
@@ -101,11 +119,8 @@ func initMqtt(cfg *config.MqttConfig) (*mqtt.Client, error) {
 		return nil, fmt.Errorf("failed to connect to MQTT broker: %w", err)
 	}
 
-	for _, topic := range cfg.DefaultTopics {
-		if err := mqttClient.Subscribe(topic, mqttClient.DefaultCallback); err != nil {
-			return nil, fmt.Errorf("failed to subscribe to topic %s: %w", topic, err)
-		}
-		log.Info().Msgf("Subscribed to topic: %s", topic)
+	if err := mqttClient.SubscribeRegistry(); err != nil {
+		return nil, fmt.Errorf("failed to subscribe to MQTT topics: %w", err)
 	}
 
 	return mqttClient, nil
