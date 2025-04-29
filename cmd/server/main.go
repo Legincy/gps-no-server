@@ -6,11 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	"gps-no-server/internal/config"
+	"gps-no-server/internal/controllers"
 	"gps-no-server/internal/database"
 	"gps-no-server/internal/logger"
 	"gps-no-server/internal/mqtt"
 	"gps-no-server/internal/mqtt/subscriptions"
 	"gps-no-server/internal/repository"
+	"gps-no-server/internal/services"
 	"net/http"
 	"os"
 	"os/signal"
@@ -38,35 +40,48 @@ func main() {
 		}
 	}()
 
-	mqttClient, err := initMqtt(&cfg.Mqtt, gormDB)
+	stationRepository := repository.NewStationRepository(gormDB.DB)
+	rangingRepository := repository.NewRangingRepository(gormDB.DB)
+
+	stationService := services.NewStationService(stationRepository)
+	rangingService := services.NewRangingService(rangingRepository, stationRepository)
+
+	mqttClient, err := initMqtt(&cfg.Mqtt, stationService, rangingService)
 	if err != nil {
-		log.Error().Msgf("Error while initializing MQTT client: %v", err)
+		log.Error().Err(err).Msg("Error while initializing MQTT client")
 	}
 	defer mqttClient.Disconnect()
 
-	server, err := initServer(&cfg.Server)
+	server, err := initServer(&cfg.Server, stationService, rangingService)
 	if err != nil {
-		log.Fatal().Msgf("Error while initializing server: %v", err)
+		log.Fatal().Err(err).Msg("Error while initializing server")
 	}
 
+	// Graceful Shutdown
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
 	<-quit
 
+	log.Info().Msg("Shutdown signal received")
+
 	if server != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout*time.Second)
 		defer cancel()
 
-		log.Info().Msgf("Shutting down server...")
+		log.Info().Msg("Shutting down server...")
 		if err := server.Shutdown(ctx); err != nil {
-			log.Error().Msgf("Error while shutting down server: %v", err)
+			log.Error().Err(err).Msg("Error while shutting down server")
 		}
-		log.Info().Msgf("Successfully stopped HTTP server")
+		log.Info().Msg("Successfully stopped HTTP server")
 	}
 }
 
-func initServer(cfg *config.ServerConfig) (*http.Server, error) {
+func initServer(
+	cfg *config.ServerConfig,
+	stationService *services.StationService,
+	rangingService *services.RangingService,
+) (*http.Server, error) {
 	gin.SetMode(cfg.ReleaseMode)
 	router := gin.New()
 
@@ -76,41 +91,67 @@ func initServer(cfg *config.ServerConfig) (*http.Server, error) {
 
 	router.Use(gin.Recovery())
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  http.StatusOK,
-			"message": "pong",
-		})
+	router.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(http.StatusNoContent)
+			return
+		}
+
+		c.Next()
 	})
 
+	stationController := controllers.NewStationController(stationService)
+
+	apiHandler := controllers.NewAPI(stationController)
+	apiHandler.RegisterRoutes(router)
+
+	// Server erstellen
 	server := &http.Server{
 		Addr:         fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
 		Handler:      router,
 		ReadTimeout:  cfg.ReadTimeout * time.Second,
 		WriteTimeout: cfg.WriteTimeout * time.Second,
+		IdleTimeout:  120 * time.Second, // Zusätzlicher Idle-Timeout für Keep-Alive-Verbindungen
 	}
 
+	// Server starten
 	errChan := make(chan error, 1)
 
 	go func() {
+		log.Info().Msgf("Starting server on %s:%d (%s)", cfg.Host, cfg.Port, cfg.ReleaseMode)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error().Msgf("Server failed to start: %v", err)
+			log.Error().Err(err).Msg("Server failed to start")
 			errChan <- err
 		}
 	}()
 
-	log.Info().Msgf("Server started on %s:%d (%s)", cfg.Host, cfg.Port, cfg.ReleaseMode)
+	// Kurze Wartezeit, um sicherzustellen, dass der Server starten konnte
+	select {
+	case err := <-errChan:
+		return nil, err
+	case <-time.After(100 * time.Millisecond):
+		log.Info().Msgf("Server started successfully on %s:%d (%s)", cfg.Host, cfg.Port, cfg.ReleaseMode)
+	}
 
 	return server, nil
 }
 
-func initMqtt(cfg *config.MqttConfig, db *database.GormDB) (*mqtt.Client, error) {
-	stationRepository := repository.NewStationRepository(db.DB)
-	rangingRepository := repository.NewRangingRepository(db.DB)
+func initMqtt(
+	cfg *config.MqttConfig,
+	stationService *services.StationService,
+	rangingService *services.RangingService,
+) (*mqtt.Client, error) {
+	subscriptionRegistry := mqtt.NewSubscriptionRegistry()
 
-	subscriptionRegistry := mqtt.CreateRegistry()
-	subscriptionRegistry.Register(subscriptions.NewStationSubscription(stationRepository))
-	subscriptionRegistry.Register(subscriptions.NewRangingSubscription(rangingRepository, stationRepository))
+	stationHandler := subscriptions.NewStationSubscription(stationService)
+	rangingHandler := subscriptions.NewRangingSubscription(rangingService, stationService)
+
+	subscriptionRegistry.Register(stationHandler)
+	subscriptionRegistry.Register(rangingHandler)
 
 	mqttClient, err := mqtt.Create(cfg, subscriptionRegistry)
 	if err != nil {
@@ -125,5 +166,6 @@ func initMqtt(cfg *config.MqttConfig, db *database.GormDB) (*mqtt.Client, error)
 		return nil, fmt.Errorf("failed to subscribe to MQTT topics: %w", err)
 	}
 
+	log.Info().Msg("MQTT client initialized and subscribed to topics")
 	return mqttClient, nil
 }

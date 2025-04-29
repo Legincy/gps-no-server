@@ -12,7 +12,7 @@ type Registry struct {
 	log           zerolog.Logger
 }
 
-func CreateRegistry() *Registry {
+func NewSubscriptionRegistry() *Registry {
 	return &Registry{
 		subscriptions: make([]interfaces.Subscription, 0),
 		log:           logger.GetLogger("mqtt"),

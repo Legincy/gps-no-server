@@ -22,18 +22,8 @@ func NewStationRepository(db *gorm.DB) *StationRepository {
 
 func (s *StationRepository) Save(ctx context.Context, station *models.Station) (*models.Station, error) {
 	result := s.db.WithContext(ctx).Where("mac_address = ?", station.MacAddress).FirstOrCreate(station)
-	if result.Error != nil {
-		s.log.Error().Err(result.Error).Msg("Failed to save station")
-		return nil, result.Error
-	}
 
-	if result.RowsAffected == 0 {
-		s.log.Info().Msg("Station already exists, not created")
-		return station, nil
-	}
-
-	s.log.Info().Msg("Station saved successfully")
-	return station, nil
+	return station, result.Error
 }
 
 func (s *StationRepository) FindAll(ctx context.Context) ([]*models.Station, error) {

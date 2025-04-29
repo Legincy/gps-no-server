@@ -21,6 +21,27 @@ func NewRangingRepository(db *gorm.DB) *RangingRepository {
 	}
 }
 
+func (c *RangingRepository) FindAll(ctx context.Context) ([]*models.Ranging, error) {
+	var rangings []*models.Ranging
+	result := c.db.WithContext(ctx).Find(&rangings)
+
+	return rangings, result.Error
+}
+
+func (r *RangingRepository) FindByID(ctx context.Context, id uint) (*models.Ranging, error) {
+	var ranging models.Ranging
+	result := r.db.WithContext(ctx).First(&ranging, id)
+
+	return &ranging, result.Error
+}
+
+func (r *RangingRepository) FindByMac(ctx context.Context, mac string) ([]*models.Ranging, error) {
+	var rangings []*models.Ranging
+	result := r.db.WithContext(ctx).Where("source_id = ? OR destination_id = ?", mac, mac).Find(&rangings)
+
+	return rangings, result.Error
+}
+
 func (c *RangingRepository) Save(ctx context.Context, ranging *models.Ranging) error {
 	result := c.db.WithContext(ctx).Where(" source_id = ? AND target_id = ?", ranging.Source.ID, ranging.Destination.ID).Assign(ranging).FirstOrCreate(ranging)
 

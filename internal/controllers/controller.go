@@ -1,6 +1,8 @@
-package interfaces
+package controllers
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+)
 
 type Controller interface {
 	RegisterRoutes(router *gin.RouterGroup)
@@ -16,7 +18,7 @@ func NewAPI(controllers ...Controller) *API {
 	}
 }
 
-func (api *API) RegisterRoutes(router *gin.RouterGroup) {
+func (api *API) RegisterRoutes(router *gin.Engine) {
 	apiGroup := router.Group("/api/v1")
 
 	for _, controller := range api.Controllers {

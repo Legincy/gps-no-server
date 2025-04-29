@@ -7,7 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"gps-no-server/internal/logger"
 	"gps-no-server/internal/models"
-	"gps-no-server/internal/repository"
+	"gps-no-server/internal/services"
 	"time"
 )
 
@@ -25,22 +25,22 @@ type DistanceData struct {
 }
 
 type RangingSubscription struct {
-	log               zerolog.Logger
-	rangingRepository *repository.RangingRepository
-	stationRepository *repository.StationRepository
+	log            zerolog.Logger
+	rangingService *services.RangingService
+	stationService *services.StationService
 }
 
-func NewRangingSubscription(rangingRepository *repository.RangingRepository, stationRepository *repository.StationRepository) *RangingSubscription {
+func NewRangingSubscription(rangingService *services.RangingService, stationService *services.StationService) *RangingSubscription {
 	return &RangingSubscription{
-		log:               logger.GetLogger("ranging-subscription"),
-		rangingRepository: rangingRepository,
-		stationRepository: stationRepository,
+		log:            logger.GetLogger("rangingService-subscription"),
+		rangingService: rangingService,
+		stationService: stationService,
 	}
 }
 
 func (c *RangingSubscription) GetTopics() []string {
 	return []string{
-		"gpsno/simulation/devices/+/uwb/ranging",
+		"gpsno/simulation/devices/+/uwb/rangingService",
 	}
 }
 
@@ -62,8 +62,8 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		source := &models.Station{MacAddress: rangingData.SourceAddress}
 		destination := &models.Station{MacAddress: rangingData.DestinationAddress}
 
-		sourceStation, _ := c.stationRepository.FindByMacAddress(ctx, source.MacAddress)
-		destinationStation, _ := c.stationRepository.FindByMacAddress(ctx, destination.MacAddress)
+		sourceStation, _ := c.stationService.GetStationByMac(ctx, source.MacAddress)
+		destinationStation, _ := c.stationService.GetStationByMac(ctx, destination.MacAddress)
 
 		rangingModel := &models.Ranging{
 			Source:      sourceStation,
@@ -74,8 +74,8 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		rangingModels = append(rangingModels, rangingModel)
 	}
 
-	if err := c.rangingRepository.SaveAll(ctx, rangingModels); err != nil {
-		c.log.Error().Err(err).Msg("Failed to save ranging data")
+	if err := c.rangingService.SaveAllRanging(ctx, rangingModels); err != nil {
+		c.log.Error().Err(err).Msg("Failed to save rangingService data")
 		return
 	}
 }
