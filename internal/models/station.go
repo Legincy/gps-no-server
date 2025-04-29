@@ -2,12 +2,14 @@ package models
 
 import (
 	"gorm.io/gorm"
+	"time"
 )
 
 type Station struct {
 	gorm.Model
 	MacAddress string `gorm:"uniqueIndex;not null"`
 	Name       string
-	PositionX  float64 `gorm:"column:position_x"`
-	PositionY  float64 `gorm:"column:position_y"`
+	ClusterID  *uint
+	Cluster    *Cluster `gorm:"foreignKey:ClusterID"`
+	LastSeen   time.Time
 }

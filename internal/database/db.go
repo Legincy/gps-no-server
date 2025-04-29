@@ -43,7 +43,11 @@ func NewGormDB(cfg *config.DatabaseConfig) (*GormDB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := db.AutoMigrate(&models.Station{}); err != nil {
+	if err := db.AutoMigrate(
+		&models.Station{},
+		&models.Cluster{},
+		&models.Ranging{},
+	); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
