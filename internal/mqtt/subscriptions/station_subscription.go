@@ -50,7 +50,7 @@ func NewStationSubscription(stationRepository *repository.StationRepository) *St
 
 func (c *StationSubscription) GetTopics() []string {
 	return []string{
-		"gpsno/simulation2/devices/+/device/raw",
+		"gpsno/simulation/devices/+/device/raw",
 	}
 }
 

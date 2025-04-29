@@ -106,9 +106,11 @@ func initServer(cfg *config.ServerConfig) (*http.Server, error) {
 
 func initMqtt(cfg *config.MqttConfig, db *database.GormDB) (*mqtt.Client, error) {
 	stationRepository := repository.NewStationRepository(db.DB)
+	rangingRepository := repository.NewRangingRepository(db.DB)
 
 	subscriptionRegistry := mqtt.CreateRegistry()
 	subscriptionRegistry.Register(subscriptions.NewStationSubscription(stationRepository))
+	subscriptionRegistry.Register(subscriptions.NewRangingSubscription(rangingRepository, stationRepository))
 
 	mqttClient, err := mqtt.Create(cfg, subscriptionRegistry)
 	if err != nil {

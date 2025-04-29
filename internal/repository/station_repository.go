@@ -16,7 +16,7 @@ type StationRepository struct {
 func NewStationRepository(db *gorm.DB) *StationRepository {
 	return &StationRepository{
 		db:  db,
-		log: logger.GetLogger("mqtt"),
+		log: logger.GetLogger("station-repository"),
 	}
 }
 
@@ -62,4 +62,15 @@ func (s *StationRepository) FindActive(ctx context.Context) ([]*models.Station, 
 	result := s.db.WithContext(ctx).Where("active = ?", true).Find(&stations)
 
 	return stations, result.Error
+}
+
+func (c *StationRepository) FindByMacAddress(ctx context.Context, macAddress string) (*models.Station, error) {
+	station := &models.Station{}
+	result := c.db.WithContext(ctx).Where("mac_address = ?", macAddress).First(station)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return station, nil
 }
