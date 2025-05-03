@@ -32,9 +32,7 @@ func FromStation(station *models.Station, includes map[string]bool) *StationDto 
 
 	if includes["cluster"] && station.Cluster != nil {
 		response.Cluster = FromCluster(station.Cluster, nil)
-	}
-
-	if includes["cluster_id"] {
+	} else {
 		response.ClusterID = station.ClusterID
 	}
 

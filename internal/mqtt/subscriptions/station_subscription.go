@@ -71,7 +71,7 @@ func (c *StationSubscription) HandleMessage(message mqtt.Message) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if _, err := c.stationService.SaveStation(ctx, station); err != nil {
+	if _, err := c.stationService.Save(ctx, station); err != nil {
 		c.log.Error().Err(err).Str("mac", station.MacAddress).Msg("Failed to save station")
 		return
 	}
