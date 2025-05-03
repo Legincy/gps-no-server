@@ -19,16 +19,16 @@ func NewClusterController(clusterService *services.ClusterService) *ClusterContr
 func (c *ClusterController) RegisterRoutes(router *gin.RouterGroup) {
 	stations := router.Group("/clusters")
 	{
-		stations.GET("", c.GetAllClusters)
+		stations.GET("", c.GetAll)
 	}
 }
 
-func (c *ClusterController) GetAllClusters(ctx *gin.Context) {
+func (c *ClusterController) GetAll(ctx *gin.Context) {
 	response := make(map[string]interface{})
 	includeParams := ctx.Query("include")
 	includes := dto.ParseIncludes(includeParams)
 
-	clusters, err := c.clusterService.GetAllClusters(ctx, includes["stations"])
+	clusters, err := c.clusterService.GetAll(ctx, includes["stations"])
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})
 		return

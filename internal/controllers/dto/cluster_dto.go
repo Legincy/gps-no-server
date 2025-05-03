@@ -3,14 +3,18 @@ package dto
 import (
 	"gorm.io/gorm"
 	"gps-no-server/internal/models"
+	"time"
 )
 
 type ClusterDto struct {
 	gorm.Model  `json:"-"`
-	ID          uint          `json:"id"`
-	Name        string        `json:"name"`
-	Description string        `json:"description"`
-	Stations    []*StationDto `json:"stations,omitempty"`
+	ID          uint            `json:"id"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Stations    []*StationDto   `json:"stations,omitempty"`
+	CreatedAt   *time.Time      `json:"created_at,omitempty"`
+	UpdatedAt   *time.Time      `json:"updated_at,omitempty"`
+	DeletedAt   *gorm.DeletedAt `json:"deleted_at,omitempty"`
 }
 
 func FromCluster(cluster *models.Cluster, includes map[string]bool) *ClusterDto {
@@ -32,6 +36,12 @@ func FromCluster(cluster *models.Cluster, includes map[string]bool) *ClusterDto 
 		}
 
 		response.Stations = FromStationList(stationPointers, nil)
+	}
+
+	if includes["meta"] {
+		response.CreatedAt = &cluster.CreatedAt
+		response.UpdatedAt = &cluster.UpdatedAt
+		response.DeletedAt = &cluster.DeletedAt
 	}
 
 	return response

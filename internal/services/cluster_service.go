@@ -16,6 +16,6 @@ func NewClusterService(clusterRepository *repository.ClusterRepository) *Cluster
 	}
 }
 
-func (c *ClusterService) GetAllClusters(ctx context.Context, preloadTable bool) ([]*models.Cluster, error) {
+func (c *ClusterService) GetAll(ctx context.Context, preloadTable bool) ([]*models.Cluster, error) {
 	return c.clusterRepository.FindAll(ctx, preloadTable)
 }
