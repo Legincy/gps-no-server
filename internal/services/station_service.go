@@ -16,8 +16,8 @@ func NewStationService(stationRepository *repository.StationRepository) *Station
 	}
 }
 
-func (s *StationService) GetAllStations(ctx context.Context) ([]*models.Station, error) {
-	return s.stationRepository.FindAll(ctx)
+func (s *StationService) GetAllStations(ctx context.Context, preloadTable bool) ([]*models.Station, error) {
+	return s.stationRepository.FindAll(ctx, preloadTable)
 }
 
 func (s *StationService) GetStationByID(ctx context.Context, id uint) (*models.Station, error) {

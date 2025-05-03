@@ -26,9 +26,16 @@ func (s *StationRepository) Save(ctx context.Context, station *models.Station) (
 	return station, result.Error
 }
 
-func (s *StationRepository) FindAll(ctx context.Context) ([]*models.Station, error) {
+func (s *StationRepository) FindAll(ctx context.Context, preloadTable bool) ([]*models.Station, error) {
 	var stations []*models.Station
-	result := s.db.WithContext(ctx).Find(&stations)
+
+	query := s.db.WithContext(ctx)
+
+	if preloadTable {
+		query = query.Preload("Cluster")
+	}
+
+	result := query.Find(&stations)
 
 	return stations, result.Error
 }
@@ -36,6 +43,10 @@ func (s *StationRepository) FindAll(ctx context.Context) ([]*models.Station, err
 func (s *StationRepository) FindByID(ctx context.Context, id uint) (*models.Station, error) {
 	var station models.Station
 	result := s.db.WithContext(ctx).First(&station, id)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
 
 	return &station, result.Error
 }
