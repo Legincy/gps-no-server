@@ -53,42 +53,42 @@ func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.R
 		return nil
 	}
 
-	tx := c.db.WithContext(ctx).Begin()
-	if tx.Error != nil {
-		return tx.Error
+	query := c.db.WithContext(ctx).Begin()
+	if query.Error != nil {
+		return query.Error
 	}
 
 	defer func() {
 		if r := recover(); r != nil {
-			tx.Rollback()
+			query.Rollback()
 		}
 	}()
 
 	for _, ranging := range rangingList {
 		var existingRanging models.Ranging
-		result := tx.Where("source_id = ? AND destination_id = ? AND ABS(EXTRACT(EPOCH FROM (timestamp - ?))) < 1",
-			ranging.Source.ID, ranging.Destination.ID, ranging.Timestamp).
+		result := query.Where("source_id = ? AND destination_id = ?",
+			ranging.Source.ID, ranging.Destination.ID).
 			First(&existingRanging)
 
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				if err := tx.Create(ranging).Error; err != nil {
-					tx.Rollback()
+				if err := query.Create(ranging).Error; err != nil {
+					query.Rollback()
 					return err
 				}
 			} else {
-				tx.Rollback()
+				query.Rollback()
 				return result.Error
 			}
 		} else {
 			existingRanging.RawDistance = ranging.RawDistance
 
-			if err := tx.Save(&existingRanging).Error; err != nil {
-				tx.Rollback()
+			if err := query.Save(&existingRanging).Error; err != nil {
+				query.Rollback()
 				return err
 			}
 		}
 	}
 
-	return tx.Commit().Error
+	return query.Commit().Error
 }

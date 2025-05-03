@@ -2,18 +2,21 @@ package services
 
 import (
 	"context"
+	"gps-no-server/internal/cache"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
 )
 
 type RangingService struct {
 	rangingRepository *repository.RangingRepository
+	rangingCache      *cache.RangingCache
 	stationRepository *repository.StationRepository
 }
 
-func NewRangingService(rangingRepository *repository.RangingRepository, stationRepository *repository.StationRepository) *RangingService {
+func NewRangingService(rangingRepository *repository.RangingRepository, stationRepository *repository.StationRepository, cacheManager *cache.CacheManager) *RangingService {
 	return &RangingService{
 		rangingRepository: rangingRepository,
+		rangingCache:      cacheManager.RangingCache,
 		stationRepository: stationRepository,
 	}
 }

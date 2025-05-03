@@ -32,7 +32,7 @@ type RangingSubscription struct {
 
 func NewRangingSubscription(rangingService *services.RangingService, stationService *services.StationService) *RangingSubscription {
 	return &RangingSubscription{
-		log:            logger.GetLogger("rangingService-subscription"),
+		log:            logger.GetLogger("ranging-subscription"),
 		rangingService: rangingService,
 		stationService: stationService,
 	}
@@ -40,7 +40,7 @@ func NewRangingSubscription(rangingService *services.RangingService, stationServ
 
 func (c *RangingSubscription) GetTopics() []string {
 	return []string{
-		"gpsno/simulation/devices/+/uwb/rangingService",
+		"gpsno/simulation/devices/+/uwb/ranging",
 	}
 }
 
