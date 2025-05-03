@@ -21,20 +21,20 @@ func NewRangingService(rangingRepository *repository.RangingRepository, stationR
 	}
 }
 
-func (s *RangingService) GetAllRanging(ctx context.Context) ([]*models.Ranging, error) {
-	return s.rangingRepository.FindAll(ctx)
+func (s *RangingService) GetAll(ctx context.Context, preloadTable bool) ([]*models.Ranging, error) {
+	return s.rangingRepository.FindAll(ctx, preloadTable)
 }
 
-func (s *RangingService) GetRangingByID(ctx context.Context, id uint) (*models.Ranging, error) {
+func (s *RangingService) GetByID(ctx context.Context, id uint) (*models.Ranging, error) {
 	return s.rangingRepository.FindByID(ctx, id)
 }
 
-func (s *RangingService) GetRangingByMac(ctx context.Context, mac string) ([]*models.Ranging, error) {
+func (s *RangingService) GetByMac(ctx context.Context, mac string) ([]*models.Ranging, error) {
 	return s.rangingRepository.FindByMac(ctx, mac)
 
 }
 
-func (s *RangingService) SaveRanging(ctx context.Context, ranging *models.Ranging) (*models.Ranging, error) {
+func (s *RangingService) Save(ctx context.Context, ranging *models.Ranging) (*models.Ranging, error) {
 	err := s.rangingRepository.Save(ctx, ranging)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,7 @@ func (s *RangingService) SaveRanging(ctx context.Context, ranging *models.Rangin
 	return ranging, nil
 }
 
-func (s *RangingService) SaveAllRanging(ctx context.Context, rangingList []*models.Ranging) error {
+func (s *RangingService) SaveAll(ctx context.Context, rangingList []*models.Ranging) error {
 	if len(rangingList) == 0 {
 		return nil
 	}

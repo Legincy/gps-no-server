@@ -112,8 +112,9 @@ func initServer(
 
 	stationController := controllers.NewStationController(stationService)
 	clusterController := controllers.NewClusterController(clusterService)
+	rangingController := controllers.NewRangingController(rangingService)
 
-	apiHandler := controllers.NewAPI(stationController, clusterController)
+	apiHandler := controllers.NewAPI(stationController, clusterController, rangingController)
 	apiHandler.RegisterRoutes(router)
 
 	// Server erstellen

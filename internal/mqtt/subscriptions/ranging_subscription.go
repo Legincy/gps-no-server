@@ -62,8 +62,8 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		source := &models.Station{MacAddress: rangingData.SourceAddress}
 		destination := &models.Station{MacAddress: rangingData.DestinationAddress}
 
-		sourceStation, _ := c.stationService.GetStationByMac(ctx, source.MacAddress)
-		destinationStation, _ := c.stationService.GetStationByMac(ctx, destination.MacAddress)
+		sourceStation, _ := c.stationService.GetByMac(ctx, source.MacAddress)
+		destinationStation, _ := c.stationService.GetByMac(ctx, destination.MacAddress)
 
 		rangingModel := &models.Ranging{
 			Source:      sourceStation,
@@ -74,7 +74,7 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		rangingModels = append(rangingModels, rangingModel)
 	}
 
-	if err := c.rangingService.SaveAllRanging(ctx, rangingModels); err != nil {
+	if err := c.rangingService.SaveAll(ctx, rangingModels); err != nil {
 		c.log.Error().Err(err).Msg("Failed to save rangingService data")
 		return
 	}

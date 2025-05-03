@@ -21,9 +21,16 @@ func NewRangingRepository(db *gorm.DB) *RangingRepository {
 	}
 }
 
-func (c *RangingRepository) FindAll(ctx context.Context) ([]*models.Ranging, error) {
+func (c *RangingRepository) FindAll(ctx context.Context, preloadTable bool) ([]*models.Ranging, error) {
 	var rangings []*models.Ranging
-	result := c.db.WithContext(ctx).Find(&rangings)
+
+	query := c.db.WithContext(ctx)
+
+	if preloadTable {
+		query = query.Preload("Source").Preload("Destination")
+	}
+
+	result := query.Find(&rangings)
 
 	return rangings, result.Error
 }
