@@ -99,3 +99,24 @@ func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.R
 
 	return query.Commit().Error
 }
+
+func (c *RangingRepository) FindBySourceAndDestination(ctx context.Context, preloadTable bool, sourceStation *models.Station, destinationStation *models.Station) ([]*models.Ranging, error) {
+	var rangings []*models.Ranging
+	query := c.db.WithContext(ctx)
+
+	if preloadTable {
+		query = query.Preload("Source").Preload("Destination")
+	}
+
+	if sourceStation != nil {
+		query = query.Where("source_id = ?", sourceStation.ID)
+	}
+
+	if destinationStation != nil {
+		query = query.Where("destination_id = ?", destinationStation.ID)
+	}
+
+	result := query.Find(&rangings)
+
+	return rangings, result.Error
+}

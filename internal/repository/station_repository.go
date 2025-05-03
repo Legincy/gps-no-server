@@ -42,7 +42,7 @@ func (s *StationRepository) FindAll(ctx context.Context, preloadTable bool) ([]*
 
 func (s *StationRepository) FindByID(ctx context.Context, id uint) (*models.Station, error) {
 	var station models.Station
-	result := s.db.WithContext(ctx).First(&station, id)
+	result := s.db.WithContext(ctx).Where("id = ?", id).First(&station)
 
 	if result.Error != nil {
 		return nil, result.Error
@@ -51,9 +51,9 @@ func (s *StationRepository) FindByID(ctx context.Context, id uint) (*models.Stat
 	return &station, result.Error
 }
 
-func (s *StationRepository) FindByMac(ctx context.Context, mac string) (*models.Station, error) {
+func (s *StationRepository) FindByMac(ctx context.Context, macAddress string) (*models.Station, error) {
 	var station models.Station
-	result := s.db.WithContext(ctx).Where("mac_address = ?", mac).First(&station)
+	result := s.db.WithContext(ctx).Where("mac_address = ?", macAddress).First(&station)
 
 	return &station, result.Error
 }

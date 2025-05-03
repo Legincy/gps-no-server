@@ -28,8 +28,13 @@ func FromRanging(ranging *models.Ranging, includes map[string]bool) *RangingDto 
 	}
 
 	if includes["stations"] {
-		response.Source = FromStation(ranging.Source, nil)
-		response.Destination = FromStation(ranging.Destination, nil)
+		if ranging.Source != nil {
+			response.Source = FromStation(ranging.Source, nil)
+		}
+
+		if ranging.Destination != nil {
+			response.Destination = FromStation(ranging.Destination, nil)
+		}
 	} else {
 		response.SourceID = ranging.SourceID
 		response.DestinationID = ranging.DestinationID
@@ -44,10 +49,10 @@ func FromRanging(ranging *models.Ranging, includes map[string]bool) *RangingDto 
 	return response
 }
 
-func FromRangingList(rangings []*models.Ranging, includes map[string]bool) []*RangingDto {
+func FromRangingList(rangingList []*models.Ranging, includes map[string]bool) []*RangingDto {
 	var response []*RangingDto
 
-	for _, ranging := range rangings {
+	for _, ranging := range rangingList {
 		response = append(response, FromRanging(ranging, includes))
 	}
 

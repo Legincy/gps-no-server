@@ -48,7 +48,7 @@ func main() {
 	clusterRepository := repository.NewClusterRepository(gormDB.DB)
 
 	stationService := services.NewStationService(stationRepository)
-	rangingService := services.NewRangingService(rangingRepository, stationRepository, cacheManager)
+	rangingService := services.NewRangingService(rangingRepository, stationService, cacheManager)
 	clusterService := services.NewClusterService(clusterRepository)
 
 	mqttClient, err := initMqtt(&cfg.Mqtt, stationService, rangingService)

@@ -24,9 +24,14 @@ func (c *StationController) RegisterRoutes(router *gin.RouterGroup) {
 }
 
 func (c *StationController) GetAll(ctx *gin.Context) {
-	response := make(map[string]interface{})
-	includeParams := ctx.Query("include")
-	includes := dto.ParseIncludes(includeParams)
+	includeParam := ctx.Query("include")
+	includes := dto.ParseIncludes(includeParam)
+
+	response := map[string]interface{}{
+		"status":  200,
+		"message": "Successfully retrieved station data",
+		"payload": []interface{}{},
+	}
 
 	stations, err := c.stationService.GetAll(ctx, includes["cluster"])
 	if err != nil {
@@ -36,12 +41,9 @@ func (c *StationController) GetAll(ctx *gin.Context) {
 
 	transformedResult := dto.FromStationList(stations, includes)
 
-	response["payload"] = transformedResult
-	if len(transformedResult) == 0 {
-		response["payload"] = []interface{}{}
+	if len(transformedResult) > 0 {
+		response["payload"] = transformedResult
 	}
-	response["status"] = "success"
-	response["message"] = "Stations retrieved successfully"
 
 	ctx.JSON(200, response)
 

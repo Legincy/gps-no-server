@@ -24,24 +24,31 @@ func (c *RangingController) RegisterRoutes(router *gin.RouterGroup) {
 }
 
 func (c *RangingController) GetAll(ctx *gin.Context) {
-	response := make(map[string]interface{})
-	includeParams := ctx.Query("include")
-	includes := dto.ParseIncludes(includeParams)
+	includeParam := ctx.Query("include")
+	sourceParam := ctx.Query("source")
+	destinationParam := ctx.Query("destination")
 
-	rangings, err := c.rangingService.GetAll(ctx, includes["stations"])
+	includes := dto.ParseIncludes(includeParam)
+
+	response := map[string]interface{}{
+		"status":  200,
+		"message": "Successfully retrieved ranging data",
+		"payload": []interface{}{},
+	}
+
+	rangingData, err := c.rangingService.GetAll(ctx, includes["stations"], sourceParam, destinationParam)
 	if err != nil {
-		ctx.JSON(500, gin.H{"error": err.Error()})
+		response["status"] = 500
+		response["message"] = err.Error()
+		ctx.JSON(500, response)
 		return
 	}
 
-	transformedResult := dto.FromRangingList(rangings, includes)
+	transformedResult := dto.FromRangingList(rangingData, includes)
 
-	response["payload"] = transformedResult
-	if len(transformedResult) == 0 {
-		response["payload"] = []interface{}{}
+	if len(transformedResult) > 0 {
+		response["payload"] = transformedResult
 	}
-	response["status"] = "success"
-	response["message"] = "Clusters retrieved successfully"
 
 	ctx.JSON(200, response)
 }

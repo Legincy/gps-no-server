@@ -2,8 +2,11 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
+	"strconv"
+	"strings"
 )
 
 type StationService struct {
@@ -34,4 +37,17 @@ func (s *StationService) GetActive(ctx context.Context) ([]*models.Station, erro
 
 func (s *StationService) Save(ctx context.Context, station *models.Station) (*models.Station, error) {
 	return s.stationRepository.Save(ctx, station)
+}
+
+func (s *StationService) GetStationByIdentifier(ctx context.Context, identifier string) (*models.Station, error) {
+	if strings.Contains(identifier, ":") {
+		return s.stationRepository.FindByMac(ctx, identifier)
+	}
+
+	id, err := strconv.ParseUint(identifier, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("ungültiger Identifier '%s': weder MAC-Adresse noch gültige ID", identifier)
+	}
+
+	return s.stationRepository.FindByID(ctx, uint(id))
 }
