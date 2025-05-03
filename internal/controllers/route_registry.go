@@ -4,24 +4,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Controller interface {
+type RouteRegistry interface {
 	RegisterRoutes(router *gin.RouterGroup)
 }
 
 type API struct {
-	Controllers []Controller
+	registry []RouteRegistry
 }
 
-func NewAPI(controllers ...Controller) *API {
+func NewAPI(registry ...RouteRegistry) *API {
 	return &API{
-		controllers,
+		registry,
 	}
 }
 
 func (api *API) RegisterRoutes(router *gin.Engine) {
 	apiGroup := router.Group("/api/v1")
 
-	for _, controller := range api.Controllers {
-		controller.RegisterRoutes(apiGroup)
+	for _, registry := range api.registry {
+		registry.RegisterRoutes(apiGroup)
 	}
 }
