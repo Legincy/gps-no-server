@@ -3,7 +3,6 @@ package subscriptions
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
 	"gps-no-server/internal/logger"
@@ -78,19 +77,4 @@ func (c *StationSubscription) HandleMessage(message mqtt.Message) {
 
 	c.log.Debug().Str("mac", station.MacAddress).Msg("Station data saved successfully")
 
-}
-
-func parseTime(timeStr string) (time.Time, error) {
-	formats := []string{
-		"2006-01-02 15:04:05",
-		time.RFC3339,
-	}
-
-	for _, format := range formats {
-		if t, err := time.Parse(format, timeStr); err == nil {
-			return t, nil
-		}
-	}
-
-	return time.Time{}, fmt.Errorf("could not parse time: %s", timeStr)
 }

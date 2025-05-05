@@ -86,6 +86,7 @@ func Load() (*Config, error) {
 	return config, nil
 }
 
+//nolint:unused
 func getEnvAsStringArray(key string, fallback []string) []string {
 	valueStr := getEnv(key, "")
 	if valueStr == "" {
