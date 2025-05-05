@@ -1,0 +1,58 @@
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Development environments
+.idea/
+.vscode/
+*.sublime-workspace
+.devcontainer/
+
+# Binary and build files
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Log files
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Testing artifacts
+*.test
+*.cov
+*.prof
+*.cpu
+coverage.out
+
+# Go modules local cache
+vendor/
+
+# Temp directories
+tmp/
+temp/
+.tmp/
+
+# Node modules
+node_modules/
+
+# Other
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Github workflows
+.github/
