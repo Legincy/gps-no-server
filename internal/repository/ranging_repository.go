@@ -55,14 +55,14 @@ func (c *RangingRepository) Save(ctx context.Context, ranging *models.Ranging) e
 	return result.Error
 }
 
-func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.Ranging) error {
+func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.Ranging) ([]*models.Ranging, error) {
 	if len(rangingList) == 0 {
-		return nil
+		return nil, nil
 	}
 
 	query := c.db.WithContext(ctx).Begin()
 	if query.Error != nil {
-		return query.Error
+		return nil, query.Error
 	}
 
 	defer func() {
@@ -70,6 +70,8 @@ func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.R
 			query.Rollback()
 		}
 	}()
+
+	savedRangings := make([]*models.Ranging, 0, len(rangingList))
 
 	for _, ranging := range rangingList {
 		var existingRanging models.Ranging
@@ -81,23 +83,30 @@ func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.R
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				if err := query.Create(ranging).Error; err != nil {
 					query.Rollback()
-					return err
+					return nil, err
 				}
+				savedRangings = append(savedRangings, ranging)
 			} else {
 				query.Rollback()
-				return result.Error
+				return nil, result.Error
 			}
 		} else {
 			existingRanging.RawDistance = ranging.RawDistance
 
 			if err := query.Save(&existingRanging).Error; err != nil {
 				query.Rollback()
-				return err
+				return nil, err
 			}
+
+			savedRangings = append(savedRangings, &existingRanging)
 		}
 	}
 
-	return query.Commit().Error
+	if err := query.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	return savedRangings, nil
 }
 
 func (c *RangingRepository) FindBySourceAndDestination(ctx context.Context, preloadTable bool, sourceStation *models.Station, destinationStation *models.Station) ([]*models.Ranging, error) {

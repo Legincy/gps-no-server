@@ -24,6 +24,7 @@ func FromRanging(ranging *models.Ranging, includes map[string]bool) *RangingDto 
 	}
 
 	response := &RangingDto{
+		ID:          ranging.ID,
 		RawDistance: ranging.RawDistance,
 	}
 

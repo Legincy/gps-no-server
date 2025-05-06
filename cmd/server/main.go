@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"gps-no-server/internal/cache"
 	"gps-no-server/internal/config"
 	"gps-no-server/internal/controllers"
 	"gps-no-server/internal/database"
@@ -41,14 +40,14 @@ func main() {
 		}
 	}()
 
-	cacheManager := cache.NewCacheManager()
+	eventStreamService := services.NewEventStreamService()
 
 	stationRepository := repository.NewStationRepository(gormDB.DB)
 	rangingRepository := repository.NewRangingRepository(gormDB.DB)
 	clusterRepository := repository.NewClusterRepository(gormDB.DB)
 
 	stationService := services.NewStationService(stationRepository)
-	rangingService := services.NewRangingService(rangingRepository, stationService, cacheManager)
+	rangingService := services.NewRangingService(rangingRepository, stationService, eventStreamService)
 	clusterService := services.NewClusterService(clusterRepository)
 
 	mqttClient, err := initMqtt(&cfg.Mqtt, stationService, rangingService)
@@ -57,7 +56,7 @@ func main() {
 	}
 	defer mqttClient.Disconnect()
 
-	server, err := initServer(&cfg.Server, stationService, rangingService, clusterService)
+	server, err := initServer(&cfg.Server, stationService, rangingService, clusterService, eventStreamService)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Error while initializing server")
 	}
@@ -87,6 +86,7 @@ func initServer(
 	stationService *services.StationService,
 	rangingService *services.RangingService,
 	clusterService *services.ClusterService,
+	eventStreamService *services.EventStreamService,
 ) (*http.Server, error) {
 	gin.SetMode(cfg.ReleaseMode)
 	router := gin.New()
@@ -113,8 +113,9 @@ func initServer(
 	stationController := controllers.NewStationController(stationService)
 	clusterController := controllers.NewClusterController(clusterService)
 	rangingController := controllers.NewRangingController(rangingService)
+	eventStreamController := controllers.NewEventStreamController(eventStreamService)
 
-	apiHandler := controllers.NewAPI(stationController, clusterController, rangingController)
+	apiHandler := controllers.NewAPI(stationController, clusterController, rangingController, eventStreamController)
 	apiHandler.RegisterRoutes(router)
 
 	// Server erstellen

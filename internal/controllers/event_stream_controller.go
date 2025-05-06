@@ -3,24 +3,39 @@ package controllers
 import (
 	"github.com/gin-gonic/gin"
 	"gps-no-server/internal/services"
+	"strconv"
 )
 
 type EventStreamController struct {
-	rangingService *services.RangingService
+	eventService *services.EventStreamService
 }
 
-func NewEventStreamController(rangingService *services.RangingService) *EventStreamController {
+func NewEventStreamController(eventService *services.EventStreamService) *EventStreamController {
 	return &EventStreamController{
-		rangingService: rangingService,
+		eventService: eventService,
 	}
 }
 
 func (c *EventStreamController) RegisterRoutes(router *gin.RouterGroup) {
-	//stream := router.Group("/stream")
+	rangings := router.Group("/rangings")
 	{
-		//stream.GET("/ranging", c.GetRangingStream)
+		rangings.GET("/stream", c.StreamAllRangingEvents)
+		rangings.GET("/:id/stream", c.StreamRangingById)
 	}
 }
 
-func (c *EventStreamController) StreamRangingEvents(ctx *gin.Context) {
+func (c *EventStreamController) StreamAllRangingEvents(ctx *gin.Context) {
+	c.eventService.HandleSSERequest(ctx, services.RangingEventType)
+}
+
+func (c *EventStreamController) StreamRangingById(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+
+	id, err := strconv.ParseUint(idParam, 10, 32)
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "Invalid ID format"})
+		return
+	}
+
+	c.eventService.HandleSSERequest(ctx, services.RangingEventType, uint(id))
 }

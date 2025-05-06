@@ -3,7 +3,9 @@ package services
 import (
 	"context"
 	"fmt"
+	"github.com/rs/zerolog"
 	"gps-no-server/internal/cache"
+	"gps-no-server/internal/logger"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
 )
@@ -12,14 +14,22 @@ type RangingService struct {
 	rangingRepository *repository.RangingRepository
 	rangingCache      *cache.RangingCache
 	stationService    *StationService
+	eventPublisher    *RangingEventPublisher
+	log               zerolog.Logger
 }
 
-func NewRangingService(rangingRepository *repository.RangingRepository, stationService *StationService, cacheManager *cache.CacheManager) *RangingService {
-	return &RangingService{
+func NewRangingService(rangingRepository *repository.RangingRepository, stationService *StationService, eventStreamService *EventStreamService) *RangingService {
+	service := &RangingService{
 		rangingRepository: rangingRepository,
-		rangingCache:      cacheManager.RangingCache,
 		stationService:    stationService,
+		log:               logger.GetLogger("ranging-service"),
 	}
+
+	if eventStreamService != nil {
+		service.eventPublisher = NewRangingEventPublisher(eventStreamService)
+	}
+
+	return service
 }
 
 func (s *RangingService) GetAll(ctx context.Context, preloadTable bool, sourceIdentifier string, destinationIdentifier string) ([]*models.Ranging, error) {
@@ -48,17 +58,25 @@ func (s *RangingService) Save(ctx context.Context, ranging *models.Ranging) (*mo
 	return ranging, nil
 }
 
-func (s *RangingService) SaveAll(ctx context.Context, rangingList []*models.Ranging) error {
+func (s *RangingService) SaveAll(ctx context.Context, rangingList []*models.Ranging) ([]*models.Ranging, error) {
 	if len(rangingList) == 0 {
-		return nil
+		return nil, nil
 	}
 
-	err := s.rangingRepository.SaveAll(ctx, rangingList)
+	savedRangings, err := s.rangingRepository.SaveAll(ctx, rangingList)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	if s.eventPublisher != nil {
+		for _, ranging := range savedRangings {
+			if err := s.eventPublisher.PublishRangingEvent(ctx, ranging); err != nil {
+				s.log.Error().Err(err).Msg("failed to publish ranging event")
+			}
+		}
+	}
+
+	return savedRangings, nil
 }
 
 func (s *RangingService) GetBySourceOrDestination(ctx context.Context, preloadTable bool, sourceIdentifier string, destinationIdentifier string) ([]*models.Ranging, error) {

@@ -1,0 +1,25 @@
+package services
+
+import (
+	"context"
+	"gps-no-server/internal/controllers/dto"
+	"gps-no-server/internal/models"
+)
+
+const RangingEventType = "update"
+
+type RangingEventPublisher struct {
+	eventService *EventStreamService
+}
+
+func NewRangingEventPublisher(eventService *EventStreamService) *RangingEventPublisher {
+	return &RangingEventPublisher{
+		eventService: eventService,
+	}
+}
+
+func (p *RangingEventPublisher) PublishRangingEvent(ctx context.Context, ranging *models.Ranging) error {
+	rangingDto := dto.FromRanging(ranging, map[string]bool{"stations": false})
+
+	return p.eventService.Publish(RangingEventType, rangingDto)
+}
