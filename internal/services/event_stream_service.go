@@ -11,11 +11,6 @@ import (
 	"sync"
 )
 
-type eventData struct {
-	Type string
-	Data interface{}
-}
-
 type EventStreamService struct {
 	clients   map[string]map[chan []byte]bool
 	eventLock sync.RWMutex
@@ -159,7 +154,7 @@ func (s *EventStreamService) HandleSSERequest(c *gin.Context, eventType string, 
 
 	eventChan, err := s.Subscribe(ctx, eventType, filterId...)
 	if err != nil {
-		c.AbortWithError(500, err)
+		_ = c.AbortWithError(500, err)
 		return
 	}
 
@@ -192,39 +187,4 @@ func (s *EventStreamService) HandleSSERequest(c *gin.Context, eventType string, 
 			c.Writer.Flush()
 		}
 	}
-}
-
-func (s *EventStreamService) mergeChannels(ctx context.Context, channels ...<-chan []byte) <-chan []byte {
-	out := make(chan []byte)
-
-	var wg sync.WaitGroup
-	wg.Add(len(channels))
-
-	for _, c := range channels {
-		go func(c <-chan []byte) {
-			defer wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case msg, ok := <-c:
-					if !ok {
-						return
-					}
-					select {
-					case out <- msg:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}(c)
-	}
-
-	go func() {
-		wg.Wait()
-		close(out)
-	}()
-
-	return out
 }

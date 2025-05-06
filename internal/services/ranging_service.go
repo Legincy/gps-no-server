@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/rs/zerolog"
-	"gps-no-server/internal/cache"
 	"gps-no-server/internal/logger"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
@@ -12,7 +11,6 @@ import (
 
 type RangingService struct {
 	rangingRepository *repository.RangingRepository
-	rangingCache      *cache.RangingCache
 	stationService    *StationService
 	eventPublisher    *RangingEventPublisher
 	log               zerolog.Logger
