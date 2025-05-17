@@ -47,6 +47,13 @@ func FromCluster(cluster *models.Cluster, includes map[string]bool) *ClusterDto 
 	return response
 }
 
+func ToCluster(dto *ClusterDto) *models.Cluster {
+	return &models.Cluster{
+		Name:        dto.Name,
+		Description: dto.Description,
+	}
+}
+
 func FromClusterList(clusters []*models.Cluster, includes map[string]bool) []*ClusterDto {
 	var response []*ClusterDto
 
