@@ -35,7 +35,7 @@ func (c *RangingRepository) FindAll(ctx context.Context, preloadTable bool) ([]*
 	return rangings, result.Error
 }
 
-func (r *RangingRepository) FindByID(ctx context.Context, id uint) (*models.Ranging, error) {
+func (r *RangingRepository) FindById(ctx context.Context, id uint) (*models.Ranging, error) {
 	var ranging models.Ranging
 	result := r.db.WithContext(ctx).First(&ranging, id)
 

@@ -38,8 +38,8 @@ func (s *RangingService) GetAll(ctx context.Context, preloadTable bool, sourceId
 	return s.rangingRepository.FindAll(ctx, preloadTable)
 }
 
-func (s *RangingService) GetByID(ctx context.Context, id uint) (*models.Ranging, error) {
-	return s.rangingRepository.FindByID(ctx, id)
+func (s *RangingService) GetById(ctx context.Context, id uint) (*models.Ranging, error) {
+	return s.rangingRepository.FindById(ctx, id)
 }
 
 func (s *RangingService) GetByMac(ctx context.Context, mac string) ([]*models.Ranging, error) {
