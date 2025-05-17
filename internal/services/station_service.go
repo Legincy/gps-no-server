@@ -23,7 +23,7 @@ func (s *StationService) GetAll(ctx context.Context, preloadTable bool) ([]*mode
 	return s.stationRepository.FindAll(ctx, preloadTable)
 }
 
-func (s *StationService) GetByID(ctx context.Context, id uint) (*models.Station, error) {
+func (s *StationService) GetById(ctx context.Context, id uint) (*models.Station, error) {
 	return s.stationRepository.FindByID(ctx, id)
 }
 
@@ -50,4 +50,43 @@ func (s *StationService) GetStationByIdentifier(ctx context.Context, identifier 
 	}
 
 	return s.stationRepository.FindByID(ctx, uint(id))
+}
+
+func (s *StationService) SaveAll(ctx context.Context, stationList []*models.Station) ([]*models.Station, error) {
+	if len(stationList) == 0 {
+		return nil, nil
+	}
+
+	for _, station := range stationList {
+		_, err := s.stationRepository.Save(ctx, station)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return stationList, nil
+}
+
+func (s *StationService) Delete(ctx context.Context, station *models.Station) error {
+	stationId := station.ID
+
+	return s.stationRepository.DeleteById(ctx, stationId)
+}
+
+func (s *StationService) Update(ctx context.Context, station *models.Station) (*models.Station, error) {
+	result, err := s.stationRepository.Update(ctx, station)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (s *StationService) Create(ctx context.Context, station *models.Station) (*models.Station, error) {
+	result, err := s.stationRepository.Create(ctx, station)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

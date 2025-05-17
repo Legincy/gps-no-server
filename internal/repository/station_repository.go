@@ -75,3 +75,33 @@ func (c *StationRepository) FindByMacAddress(ctx context.Context, macAddress str
 
 	return station, nil
 }
+
+func (c *StationRepository) DeleteById(ctx context.Context, id uint) error {
+	result := c.db.WithContext(ctx).Delete(&models.Station{}, id)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
+func (c *StationRepository) Update(ctx context.Context, station *models.Station) (*models.Station, error) {
+	result := c.db.WithContext(ctx).Save(station)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return station, nil
+}
+
+func (c *StationRepository) Create(ctx context.Context, station *models.Station) (*models.Station, error) {
+	result := c.db.WithContext(ctx).Create(station)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return station, nil
+}

@@ -46,6 +46,14 @@ func FromStation(station *models.Station, includes map[string]bool) *StationDto 
 	return response
 }
 
+func ToStation(dto *StationDto) *models.Station {
+	return &models.Station{
+		MacAddress: dto.MacAddress,
+		Name:       dto.Name,
+		ClusterID:  dto.ClusterID,
+	}
+}
+
 func FromStationList(stations []*models.Station, includes map[string]bool) []*StationDto {
 	var response []*StationDto
 
