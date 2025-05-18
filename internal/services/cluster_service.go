@@ -2,18 +2,22 @@ package services
 
 import (
 	"context"
+	"github.com/rs/zerolog"
 	"gps-no-server/internal/controllers/dto"
+	"gps-no-server/internal/logger"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
 )
 
 type ClusterService struct {
 	clusterRepository *repository.ClusterRepository
+	log               zerolog.Logger
 }
 
 func NewClusterService(clusterRepository *repository.ClusterRepository) *ClusterService {
 	return &ClusterService{
 		clusterRepository: clusterRepository,
+		log:               logger.GetLogger("cluster-service"),
 	}
 }
 

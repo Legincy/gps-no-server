@@ -105,3 +105,10 @@ func (c *Client) messageHandler(client mqtt.Client, message mqtt.Message) {
 		log.Warn().Msgf("No handler found for topic %s", topic)
 	}
 }
+
+func (c *Client) Publish(topic string, qos int, retained bool, payload []byte) interface{} {
+	if token := c.client.Publish(topic, byte(qos), retained, payload); token.Wait() && token.Error() != nil {
+		return token.Error()
+	}
+	return nil
+}
