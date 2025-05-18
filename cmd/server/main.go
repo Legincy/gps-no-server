@@ -5,14 +5,16 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"gps-no-server/internal/config"
-	"gps-no-server/internal/controllers"
-	"gps-no-server/internal/database"
-	"gps-no-server/internal/logger"
-	"gps-no-server/internal/mqtt"
-	"gps-no-server/internal/mqtt/subscriptions"
-	"gps-no-server/internal/repository"
-	"gps-no-server/internal/services"
+	"gps-no-server/internal/common/config"
+	"gps-no-server/internal/common/logger"
+	"gps-no-server/internal/core/controllers"
+	"gps-no-server/internal/core/repositories"
+	"gps-no-server/internal/core/services"
+	"gps-no-server/internal/infrastructure/database"
+	http2 "gps-no-server/internal/infrastructure/http"
+	"gps-no-server/internal/infrastructure/http/api"
+	"gps-no-server/internal/infrastructure/mqtt"
+	"gps-no-server/internal/infrastructure/mqtt/subscriptions"
 	"net/http"
 	"os"
 	"os/signal"
@@ -42,9 +44,9 @@ func main() {
 
 	eventStreamService := services.NewEventStreamService()
 
-	stationRepository := repository.NewStationRepository(gormDB.DB)
-	rangingRepository := repository.NewRangingRepository(gormDB.DB)
-	clusterRepository := repository.NewClusterRepository(gormDB.DB)
+	stationRepository := repositories.NewStationRepository(gormDB.DB)
+	rangingRepository := repositories.NewRangingRepository(gormDB.DB)
+	clusterRepository := repositories.NewClusterRepository(gormDB.DB)
 
 	stationService := services.NewStationService(stationRepository)
 	rangingService := services.NewRangingService(rangingRepository, stationService, eventStreamService)
@@ -113,9 +115,9 @@ func initServer(
 	stationController := controllers.NewStationController(stationService)
 	clusterController := controllers.NewClusterController(clusterService)
 	rangingController := controllers.NewRangingController(rangingService)
-	eventStreamController := controllers.NewEventStreamController(eventStreamService)
+	eventStreamController := http2.NewEventStreamController(eventStreamService)
 
-	apiHandler := controllers.NewAPI(stationController, clusterController, rangingController, eventStreamController)
+	apiHandler := api.NewAPI(stationController, clusterController, rangingController, eventStreamController)
 	apiHandler.RegisterRoutes(router)
 
 	// Server erstellen
