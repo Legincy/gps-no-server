@@ -10,49 +10,58 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	Mqtt     MqttConfig
+	Server   ServerConfig   `json:"server"`
+	Database DatabaseConfig `json:"database"`
+	Mqtt     MqttConfig     `json:"mqtt"`
 }
 
 type ServerConfig struct {
-	Host            string
-	Port            int
-	ReleaseMode     string
-	LogLevel        string
-	ReadTimeout     time.Duration
-	WriteTimeout    time.Duration
-	ShutdownTimeout time.Duration
+	Host            string        `json:"host"`
+	Port            int           `json:"port"`
+	ReleaseMode     string        `json:"release_mode"`
+	LogLevel        string        `json:"log_level"`
+	ReadTimeout     time.Duration `json:"read_timeout"`
+	WriteTimeout    time.Duration `json:"write_timeout"`
+	ShutdownTimeout time.Duration `json:"shutdown_timeout"`
 }
 
 type DatabaseConfig struct {
-	Host     string
-	Port     int
-	Database string
-	User     string
-	Password string
-	SSLMode  bool
-	TimeZone string
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Database string `json:"database"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+	SSLMode  bool   `json:"ssl_mode"`
+	TimeZone string `json:"time_zone"`
 }
 
 type MqttConfig struct {
-	Host      string
-	Port      int
-	ClientId  string
-	Username  string
-	Password  string
-	BaseTopic string
+	Host                 string        `json:"host"`
+	Port                 int           `json:"port"`
+	ClientId             string        `json:"client_id"`
+	Username             string        `json:"username"`
+	Password             string        `json:"password"`
+	BaseTopic            string        `json:"base_topic"`
+	AutoReconnect        bool          `json:"auto_reconnect"`
+	MaxReconnectInterval time.Duration `json:"max_reconnect_interval"`
+	CleanSession         bool          `json:"clean_session"`
 }
 
-func Load() (*Config, error) {
+func LoadEnvFile() {
 	if err := godotenv.Load(); err != nil {
 		dir, err := os.Getwd()
 		if err != nil {
-			rootDir := filepath.Dir(dir)
-			envPath := filepath.Join(rootDir, ".env")
-			_ = godotenv.Load(envPath)
+			return
 		}
+
+		rootDir := filepath.Dir(dir)
+		envPath := filepath.Join(rootDir, ".env")
+		_ = godotenv.Load(envPath)
 	}
+}
+
+func Load() (*Config, error) {
+	LoadEnvFile()
 
 	config := &Config{
 		Server: ServerConfig{
@@ -74,12 +83,15 @@ func Load() (*Config, error) {
 			TimeZone: getEnv("DB_TIME_ZONE", "UTC"),
 		},
 		Mqtt: MqttConfig{
-			Host:      getEnv("MQTT_HOST", "localhost"),
-			Port:      getEnvAsInt("MQTT_PORT", 1883),
-			ClientId:  getEnv("MQTT_CLIENT_ID", "client"),
-			Username:  getEnv("MQTT_USERNAME", ""),
-			Password:  getEnv("MQTT_PASSWORD", ""),
-			BaseTopic: getEnv("MQTT_BASE_TOPIC", "gps_no"),
+			Host:                 getEnv("MQTT_HOST", "localhost"),
+			Port:                 getEnvAsInt("MQTT_PORT", 1883),
+			ClientId:             getEnv("MQTT_CLIENT_ID", "client"),
+			Username:             getEnv("MQTT_USERNAME", ""),
+			Password:             getEnv("MQTT_PASSWORD", ""),
+			BaseTopic:            getEnv("MQTT_BASE_TOPIC", "gps_no"),
+			AutoReconnect:        getEnvAsBool("MQTT_AUTO_RECONNECT", true),
+			MaxReconnectInterval: getEnvAsDuration("MQTT_MAX_RECONNECT", 1*time.Second),
+			CleanSession:         getEnvAsBool("MQTT_CLEAN_SESSION", true),
 		},
 	}
 

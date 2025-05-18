@@ -72,14 +72,19 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-func (c *Client) Disconnect() {
+func (c *Client) Disconnect() error {
 	if !c.client.IsConnected() {
-		return
+		return nil
 	}
 
 	c.client.Disconnect(250)
-}
 
+	if c.client.IsConnected() {
+		return fmt.Errorf("MQTT client still connected after disconnect attempt")
+	}
+
+	return nil
+}
 func (c *Client) SubscribeRegistry() error {
 	topics := c.Registry.GetAllTopics()
 
