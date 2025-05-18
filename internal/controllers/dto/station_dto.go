@@ -19,10 +19,8 @@ type StationDto struct {
 	LastSeen   *time.Time      `json:"last_seen,omitempty"`
 }
 
-func FromStation(station *models.Station, includes map[string]bool) *StationDto {
-	if includes == nil {
-		includes = map[string]bool{}
-	}
+func FromStation(station *models.Station, includeParam *string) *StationDto {
+	includes := ParseIncludes(includeParam)
 
 	response := &StationDto{
 		ID:         station.ID,
@@ -40,7 +38,7 @@ func FromStation(station *models.Station, includes map[string]bool) *StationDto 
 		response.CreatedAt = &station.CreatedAt
 		response.UpdatedAt = &station.UpdatedAt
 		response.DeletedAt = &station.DeletedAt
-		response.LastSeen = &station.LastSeen
+		response.LastSeen = &station.Uptime
 	}
 
 	return response
@@ -54,11 +52,11 @@ func ToStation(dto *StationDto) *models.Station {
 	}
 }
 
-func FromStationList(stations []*models.Station, includes map[string]bool) []*StationDto {
+func FromStationList(stations []*models.Station, includeParam *string) []*StationDto {
 	var response []*StationDto
 
 	for _, station := range stations {
-		response = append(response, FromStation(station, includes))
+		response = append(response, FromStation(station, includeParam))
 	}
 
 	return response

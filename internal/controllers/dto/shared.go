@@ -2,14 +2,20 @@ package dto
 
 import "strings"
 
-func ParseIncludes(includesString string) map[string]bool {
+func ParseIncludes(includesString *string) map[string]bool {
 	includes := make(map[string]bool)
 
-	if includesString == "" {
+	if includesString == nil {
 		return includes
 	}
 
-	for _, include := range strings.Split(includesString, ",") {
+	includeStr := *includesString
+
+	if includeStr == "" {
+		return includes
+	}
+
+	for _, include := range strings.Split(includeStr, ",") {
 		normalizedField := strings.TrimSpace(strings.ToLower(include))
 		includes[normalizedField] = true
 	}

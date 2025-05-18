@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/rs/zerolog"
+	"gps-no-server/internal/controllers/dto"
 	"gps-no-server/internal/logger"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
@@ -30,12 +31,12 @@ func NewRangingService(rangingRepository *repository.RangingRepository, stationS
 	return service
 }
 
-func (s *RangingService) GetAll(ctx context.Context, preloadTable bool, sourceIdentifier string, destinationIdentifier string) ([]*models.Ranging, error) {
+func (s *RangingService) GetAll(ctx context.Context, sourceIdentifier string, destinationIdentifier string, includeParam *string) ([]*models.Ranging, error) {
 	if sourceIdentifier != "" || destinationIdentifier != "" {
-		return s.GetBySourceOrDestination(ctx, preloadTable, sourceIdentifier, destinationIdentifier)
+		return s.GetBySourceOrDestination(ctx, sourceIdentifier, destinationIdentifier, includeParam)
 	}
 
-	return s.rangingRepository.FindAll(ctx, preloadTable)
+	return s.rangingRepository.FindAll(ctx, true)
 }
 
 func (s *RangingService) GetById(ctx context.Context, id uint) (*models.Ranging, error) {
@@ -77,25 +78,26 @@ func (s *RangingService) SaveAll(ctx context.Context, rangingList []*models.Rang
 	return savedRangings, nil
 }
 
-func (s *RangingService) GetBySourceOrDestination(ctx context.Context, preloadTable bool, sourceIdentifier string, destinationIdentifier string) ([]*models.Ranging, error) {
+func (s *RangingService) GetBySourceOrDestination(ctx context.Context, sourceIdentifier string, destinationIdentifier string, includeParam *string) ([]*models.Ranging, error) {
 	var sourceStation *models.Station
 	var destStation *models.Station
 	var err error
+	includes := dto.ParseIncludes(includeParam)
 
 	if sourceIdentifier != "" {
-		sourceStation, err = s.stationService.GetStationByIdentifier(ctx, sourceIdentifier)
+		sourceStation, err = s.stationService.GetStationByIdentifier(ctx, sourceIdentifier, nil)
 		if err != nil {
 			return nil, fmt.Errorf("error while fetching source station: %w", err)
 		}
 	}
 
 	if destinationIdentifier != "" {
-		destStation, err = s.stationService.GetStationByIdentifier(ctx, destinationIdentifier)
+		destStation, err = s.stationService.GetStationByIdentifier(ctx, destinationIdentifier, nil)
 
 		if err != nil {
 			return nil, fmt.Errorf("error while fetching destination station: %w", err)
 		}
 	}
 
-	return s.rangingRepository.FindBySourceAndDestination(ctx, preloadTable, sourceStation, destStation)
+	return s.rangingRepository.FindBySourceAndDestination(ctx, sourceStation, destStation, includes)
 }

@@ -20,18 +20,18 @@ func NewClusterRepository(db *gorm.DB) *ClusterRepository {
 	}
 }
 
-func (c *ClusterRepository) Save(ctx context.Context, cluster *models.Cluster, preloadTable bool) (*models.Cluster, error) {
+func (c *ClusterRepository) Save(ctx context.Context, cluster *models.Cluster, includes map[string]bool) (*models.Cluster, error) {
 	result := c.db.WithContext(ctx).Where("id = ?", cluster.ID).FirstOrCreate(cluster)
 
 	return cluster, result.Error
 }
 
-func (c *ClusterRepository) FindAll(ctx context.Context, preloadTable bool) ([]*models.Cluster, error) {
+func (c *ClusterRepository) FindAll(ctx context.Context, includes map[string]bool) ([]*models.Cluster, error) {
 	var clusters []*models.Cluster
 
 	query := c.db.WithContext(ctx)
 
-	if preloadTable {
+	if includes["stations"] {
 		query = query.Preload("Stations")
 	}
 
@@ -40,7 +40,7 @@ func (c *ClusterRepository) FindAll(ctx context.Context, preloadTable bool) ([]*
 	return clusters, result.Error
 }
 
-func (c *ClusterRepository) FindById(ctx context.Context, id uint) (*models.Cluster, error) {
+func (c *ClusterRepository) FindById(ctx context.Context, id uint, includes map[string]bool) (*models.Cluster, error) {
 	var cluster models.Cluster
 	result := c.db.WithContext(ctx).Where("id = ?", id).First(&cluster)
 
@@ -51,7 +51,7 @@ func (c *ClusterRepository) FindById(ctx context.Context, id uint) (*models.Clus
 	return &cluster, result.Error
 }
 
-func (c *ClusterRepository) FindByMac(ctx context.Context, macAddress string) (*models.Cluster, error) {
+func (c *ClusterRepository) FindByMac(ctx context.Context, macAddress string, includes map[string]bool) (*models.Cluster, error) {
 	var cluster models.Cluster
 	result := c.db.WithContext(ctx).Where("mac_address = ?", macAddress).First(&cluster)
 
@@ -62,7 +62,7 @@ func (c *ClusterRepository) FindByMac(ctx context.Context, macAddress string) (*
 	return &cluster, result.Error
 }
 
-func (c *ClusterRepository) Create(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
+func (c *ClusterRepository) Create(ctx context.Context, cluster *models.Cluster, includes map[string]bool) (*models.Cluster, error) {
 	result := c.db.WithContext(ctx).Create(cluster)
 
 	if result.Error != nil {
@@ -72,7 +72,7 @@ func (c *ClusterRepository) Create(ctx context.Context, cluster *models.Cluster)
 	return cluster, nil
 }
 
-func (c *ClusterRepository) Update(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
+func (c *ClusterRepository) Update(ctx context.Context, cluster *models.Cluster, includes map[string]bool) (*models.Cluster, error) {
 	result := c.db.WithContext(ctx).Save(cluster)
 
 	if result.Error != nil {
@@ -82,7 +82,7 @@ func (c *ClusterRepository) Update(ctx context.Context, cluster *models.Cluster)
 	return cluster, nil
 }
 
-func (c *ClusterRepository) Delete(ctx context.Context, cluster *models.Cluster) error {
+func (c *ClusterRepository) Delete(ctx context.Context, cluster *models.Cluster, includes map[string]bool) error {
 	result := c.db.WithContext(ctx).Delete(cluster)
 
 	if result.Error != nil {
@@ -92,7 +92,7 @@ func (c *ClusterRepository) Delete(ctx context.Context, cluster *models.Cluster)
 	return nil
 }
 
-func (c *ClusterRepository) DeleteById(ctx context.Context, id uint) error {
+func (c *ClusterRepository) DeleteById(ctx context.Context, id uint, includes map[string]bool) error {
 	var cluster models.Cluster
 	result := c.db.WithContext(ctx).Where("id = ?", id).Delete(&cluster)
 

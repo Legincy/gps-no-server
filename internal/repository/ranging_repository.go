@@ -109,12 +109,16 @@ func (c *RangingRepository) SaveAll(ctx context.Context, rangingList []*models.R
 	return savedRangings, nil
 }
 
-func (c *RangingRepository) FindBySourceAndDestination(ctx context.Context, preloadTable bool, sourceStation *models.Station, destinationStation *models.Station) ([]*models.Ranging, error) {
+func (c *RangingRepository) FindBySourceAndDestination(ctx context.Context, sourceStation *models.Station, destinationStation *models.Station, includes map[string]bool) ([]*models.Ranging, error) {
 	var rangings []*models.Ranging
 	query := c.db.WithContext(ctx)
 
-	if preloadTable {
-		query = query.Preload("Source").Preload("Destination")
+	if includes["source"] {
+		query = query.Preload("Source")
+	}
+
+	if includes["destination"] {
+		query = query.Preload("Destination")
 	}
 
 	if sourceStation != nil {

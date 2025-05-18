@@ -29,5 +29,27 @@ services:
       - ./data/db:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    networks:
-      - default
+
+  influx:
+    image: influxdb:latest
+    container_name: gps-no-influx
+    env_file:
+      - .env
+    ports:
+      - "8086:8086"
+    volumes:
+      - ./data/influx/data:/var/lib/influxdb2
+      - ./data/influx/config:/etc/influxdb2
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: gps-no-grafana
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/grafana:/var/lib/grafana
+    depends_on:
+      - influx

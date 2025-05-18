@@ -17,10 +17,8 @@ type ClusterDto struct {
 	DeletedAt   *gorm.DeletedAt `json:"deleted_at,omitempty"`
 }
 
-func FromCluster(cluster *models.Cluster, includes map[string]bool) *ClusterDto {
-	if includes == nil {
-		includes = map[string]bool{}
-	}
+func FromCluster(cluster *models.Cluster, includeParam *string) *ClusterDto {
+	includes := ParseIncludes(includeParam)
 
 	response := &ClusterDto{
 		ID:          cluster.ID,
@@ -54,11 +52,11 @@ func ToCluster(dto *ClusterDto) *models.Cluster {
 	}
 }
 
-func FromClusterList(clusters []*models.Cluster, includes map[string]bool) []*ClusterDto {
+func FromClusterList(clusters []*models.Cluster, includeParam *string) []*ClusterDto {
 	var response []*ClusterDto
 
 	for _, cluster := range clusters {
-		response = append(response, FromCluster(cluster, includes))
+		response = append(response, FromCluster(cluster, includeParam))
 	}
 
 	return response

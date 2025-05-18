@@ -29,22 +29,21 @@ func (c *StationController) RegisterRoutes(router *gin.RouterGroup) {
 }
 
 func (c *StationController) GetAll(ctx *gin.Context) {
-	includeParam := ctx.Query("include")
-	includes := dto.ParseIncludes(includeParam)
-
 	response := map[string]interface{}{
 		"status":  200,
 		"message": "Successfully retrieved station data",
 		"payload": []interface{}{},
 	}
 
-	stations, err := c.stationService.GetAll(ctx, includes["cluster"])
+	includeParam := ctx.Query("include")
+
+	stations, err := c.stationService.GetAll(ctx, &includeParam)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	transformedResult := dto.FromStationList(stations, includes)
+	transformedResult := dto.FromStationList(stations, &includeParam)
 
 	if len(transformedResult) > 0 {
 		response["payload"] = transformedResult
@@ -63,7 +62,6 @@ func (c *StationController) GetById(ctx *gin.Context) {
 	}
 
 	includeParam := ctx.Query("include")
-	includes := dto.ParseIncludes(includeParam)
 
 	response := map[string]interface{}{
 		"status":  200,
@@ -71,13 +69,13 @@ func (c *StationController) GetById(ctx *gin.Context) {
 		"payload": nil,
 	}
 
-	station, err := c.stationService.GetById(ctx, uint(id))
+	station, err := c.stationService.GetById(ctx, uint(id), &includeParam)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
-	transformedResult := dto.FromStation(station, includes)
+	transformedResult := dto.FromStation(station, &includeParam)
 
 	if transformedResult != nil {
 		response["payload"] = transformedResult
@@ -101,8 +99,9 @@ func (c *StationController) Create(ctx *gin.Context) {
 	}
 
 	station := dto.ToStation(&stationDto)
+	includeParam := ctx.Query("include")
 
-	station, err := c.stationService.Create(ctx, station)
+	station, err := c.stationService.Create(ctx, station, &includeParam)
 	if err != nil {
 		response["status"] = 500
 		response["message"] = "Failed to create station: " + err.Error()
@@ -139,7 +138,8 @@ func (c *StationController) Update(ctx *gin.Context) {
 		return
 	}
 
-	station, err := c.stationService.GetById(ctx, uint(id))
+	includeParam := ctx.Query("include")
+	station, err := c.stationService.GetById(ctx, uint(id), &includeParam)
 	if err != nil {
 		response["status"] = 404
 		response["message"] = "Station not found: " + err.Error()
@@ -160,10 +160,10 @@ func (c *StationController) Update(ctx *gin.Context) {
 	}
 
 	if stationDto.LastSeen != nil {
-		station.LastSeen = *stationDto.LastSeen
+		station.Uptime = *stationDto.LastSeen
 	}
 
-	updatedStation, err := c.stationService.Update(ctx, station)
+	updatedStation, err := c.stationService.Update(ctx, station, &includeParam)
 	if err != nil {
 		response["status"] = 500
 		response["message"] = "Failed to update station: " + err.Error()
@@ -171,7 +171,7 @@ func (c *StationController) Update(ctx *gin.Context) {
 		return
 	}
 
-	response["payload"] = dto.FromStation(updatedStation, map[string]bool{"meta": true})
+	response["payload"] = dto.FromStation(updatedStation, &includeParam)
 	ctx.JSON(200, response)
 }
 
@@ -189,7 +189,8 @@ func (c *StationController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	station, err := c.stationService.GetById(ctx, uint(id))
+	includeParam := ctx.Query("include")
+	station, err := c.stationService.GetById(ctx, uint(id), &includeParam)
 
 	if err != nil {
 		response["status"] = 404
@@ -198,7 +199,7 @@ func (c *StationController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	err = c.stationService.Delete(ctx, station)
+	err = c.stationService.Delete(ctx, station, &includeParam)
 	if err != nil {
 		response["status"] = 500
 		response["message"] = "Failed to delete station: " + err.Error()

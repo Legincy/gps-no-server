@@ -18,10 +18,8 @@ type RangingDto struct {
 	DeletedAt     *gorm.DeletedAt `json:"deleted_at,omitempty"`
 }
 
-func FromRanging(ranging *models.Ranging, includes map[string]bool) *RangingDto {
-	if includes == nil {
-		includes = map[string]bool{}
-	}
+func FromRanging(ranging *models.Ranging, includeParam *string) *RangingDto {
+	includes := ParseIncludes(includeParam)
 
 	response := &RangingDto{
 		ID:          ranging.ID,
@@ -50,11 +48,11 @@ func FromRanging(ranging *models.Ranging, includes map[string]bool) *RangingDto 
 	return response
 }
 
-func FromRangingList(rangingList []*models.Ranging, includes map[string]bool) []*RangingDto {
+func FromRangingList(rangingList []*models.Ranging, includeParam *string) []*RangingDto {
 	var response []*RangingDto
 
 	for _, ranging := range rangingList {
-		response = append(response, FromRanging(ranging, includes))
+		response = append(response, FromRanging(ranging, includeParam))
 	}
 
 	return response

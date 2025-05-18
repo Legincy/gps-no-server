@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"gps-no-server/internal/controllers/dto"
 	"gps-no-server/internal/models"
 	"gps-no-server/internal/repository"
 )
@@ -16,29 +17,38 @@ func NewClusterService(clusterRepository *repository.ClusterRepository) *Cluster
 	}
 }
 
-func (c *ClusterService) GetAll(ctx context.Context, preloadTable bool) ([]*models.Cluster, error) {
-	return c.clusterRepository.FindAll(ctx, preloadTable)
+func (c *ClusterService) GetAll(ctx context.Context, includeParam *string) ([]*models.Cluster, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	return c.clusterRepository.FindAll(ctx, includes)
 }
 
-func (c *ClusterService) GetById(ctx context.Context, id uint) (*models.Cluster, error) {
-	return c.clusterRepository.FindById(ctx, id)
+func (c *ClusterService) GetById(ctx context.Context, id uint, includeParam *string) (*models.Cluster, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	return c.clusterRepository.FindById(ctx, id, includes)
 }
 
-func (c *ClusterService) GetByMac(ctx context.Context, mac string) (*models.Cluster, error) {
-	return c.clusterRepository.FindByMac(ctx, mac)
+func (c *ClusterService) GetByMac(ctx context.Context, mac string, includeParam *string) (*models.Cluster, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	return c.clusterRepository.FindByMac(ctx, mac, includes)
 }
 
-func (c *ClusterService) Save(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
-	return c.clusterRepository.Save(ctx, cluster, false)
+func (c *ClusterService) Save(ctx context.Context, cluster *models.Cluster, includeParam *string) (*models.Cluster, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	return c.clusterRepository.Save(ctx, cluster, includes)
 }
 
-func (c *ClusterService) SaveAll(ctx context.Context, clusterList []*models.Cluster) ([]*models.Cluster, error) {
+func (c *ClusterService) SaveAll(ctx context.Context, clusterList []*models.Cluster, includeParam *string) ([]*models.Cluster, error) {
 	if len(clusterList) == 0 {
 		return nil, nil
 	}
+	includes := dto.ParseIncludes(includeParam)
 
 	for _, cluster := range clusterList {
-		_, err := c.clusterRepository.Save(ctx, cluster, false)
+		_, err := c.clusterRepository.Save(ctx, cluster, includes)
 		if err != nil {
 			return nil, err
 		}
@@ -47,8 +57,10 @@ func (c *ClusterService) SaveAll(ctx context.Context, clusterList []*models.Clus
 	return clusterList, nil
 }
 
-func (c *ClusterService) Create(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
-	result, err := c.clusterRepository.Create(ctx, cluster)
+func (c *ClusterService) Create(ctx context.Context, cluster *models.Cluster, includeParam *string) (*models.Cluster, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	result, err := c.clusterRepository.Create(ctx, cluster, includes)
 	if err != nil {
 		return nil, err
 	}
@@ -56,12 +68,16 @@ func (c *ClusterService) Create(ctx context.Context, cluster *models.Cluster) (*
 	return result, nil
 }
 
-func (c *ClusterService) Delete(ctx context.Context, cluster *models.Cluster) error {
-	return c.clusterRepository.DeleteById(ctx, cluster.ID)
+func (c *ClusterService) Delete(ctx context.Context, cluster *models.Cluster, includeParam *string) error {
+	includes := dto.ParseIncludes(includeParam)
+
+	return c.clusterRepository.DeleteById(ctx, cluster.ID, includes)
 }
 
-func (c *ClusterService) Update(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
-	result, err := c.clusterRepository.Update(ctx, cluster)
+func (c *ClusterService) Update(ctx context.Context, cluster *models.Cluster, includeParam *string) (*models.Cluster, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	result, err := c.clusterRepository.Update(ctx, cluster, includes)
 	if err != nil {
 		return nil, err
 	}

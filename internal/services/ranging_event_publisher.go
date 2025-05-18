@@ -19,7 +19,7 @@ func NewRangingEventPublisher(eventService *EventStreamService) *RangingEventPub
 }
 
 func (p *RangingEventPublisher) PublishRangingEvent(ctx context.Context, ranging *models.Ranging) error {
-	rangingDto := dto.FromRanging(ranging, map[string]bool{"stations": false})
+	rangingDto := dto.FromRanging(ranging, nil)
 
 	return p.eventService.Publish(RangingEventType, rangingDto)
 }

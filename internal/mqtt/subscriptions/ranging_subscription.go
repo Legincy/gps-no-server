@@ -62,8 +62,8 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		source := &models.Station{MacAddress: rangingData.SourceAddress}
 		destination := &models.Station{MacAddress: rangingData.DestinationAddress}
 
-		sourceStation, _ := c.stationService.GetByMac(ctx, source.MacAddress)
-		destinationStation, _ := c.stationService.GetByMac(ctx, destination.MacAddress)
+		sourceStation, _ := c.stationService.GetByMac(ctx, source.MacAddress, nil)
+		destinationStation, _ := c.stationService.GetByMac(ctx, destination.MacAddress, nil)
 
 		rangingModel := &models.Ranging{
 			Source:      sourceStation,

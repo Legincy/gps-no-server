@@ -26,12 +26,12 @@ func (s *StationRepository) Save(ctx context.Context, station *models.Station) (
 	return station, result.Error
 }
 
-func (s *StationRepository) FindAll(ctx context.Context, preloadTable bool) ([]*models.Station, error) {
+func (s *StationRepository) FindAll(ctx context.Context, includes map[string]bool) ([]*models.Station, error) {
 	var stations []*models.Station
 
 	query := s.db.WithContext(ctx)
 
-	if preloadTable {
+	if includes["cluster"] {
 		query = query.Preload("Cluster")
 	}
 
@@ -40,7 +40,7 @@ func (s *StationRepository) FindAll(ctx context.Context, preloadTable bool) ([]*
 	return stations, result.Error
 }
 
-func (s *StationRepository) FindByID(ctx context.Context, id uint) (*models.Station, error) {
+func (s *StationRepository) FindByID(ctx context.Context, id uint, includes map[string]bool) (*models.Station, error) {
 	var station models.Station
 	result := s.db.WithContext(ctx).Where("id = ?", id).First(&station)
 
@@ -51,7 +51,7 @@ func (s *StationRepository) FindByID(ctx context.Context, id uint) (*models.Stat
 	return &station, result.Error
 }
 
-func (s *StationRepository) FindByMac(ctx context.Context, macAddress string) (*models.Station, error) {
+func (s *StationRepository) FindByMac(ctx context.Context, macAddress string, includes map[string]bool) (*models.Station, error) {
 	var station models.Station
 	result := s.db.WithContext(ctx).Where("mac_address = ?", macAddress).First(&station)
 

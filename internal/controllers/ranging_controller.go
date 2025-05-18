@@ -30,15 +30,13 @@ func (c *RangingController) GetAll(ctx *gin.Context) {
 	sourceParam := ctx.Query("source")
 	destinationParam := ctx.Query("destination")
 
-	includes := dto.ParseIncludes(includeParam)
-
 	response := map[string]interface{}{
 		"status":  200,
 		"message": "Successfully retrieved ranging data",
 		"payload": []interface{}{},
 	}
 
-	rangingData, err := c.rangingService.GetAll(ctx, includes["stations"], sourceParam, destinationParam)
+	rangingData, err := c.rangingService.GetAll(ctx, sourceParam, destinationParam, &includeParam)
 	if err != nil {
 		response["status"] = 500
 		response["message"] = err.Error()
@@ -46,7 +44,7 @@ func (c *RangingController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	transformedResult := dto.FromRangingList(rangingData, includes)
+	transformedResult := dto.FromRangingList(rangingData, &includeParam)
 
 	if len(transformedResult) > 0 {
 		response["payload"] = transformedResult
@@ -65,7 +63,6 @@ func (c *RangingController) GetById(ctx *gin.Context) {
 	}
 
 	includeParam := ctx.Query("include")
-	includes := dto.ParseIncludes(includeParam)
 
 	response := map[string]interface{}{
 		"status":  200,
@@ -80,7 +77,7 @@ func (c *RangingController) GetById(ctx *gin.Context) {
 		return
 	}
 
-	transformedResult := dto.FromRanging(rangingData, includes)
+	transformedResult := dto.FromRanging(rangingData, &includeParam)
 
 	if transformedResult != nil {
 		response["payload"] = transformedResult
