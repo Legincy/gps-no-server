@@ -6,8 +6,10 @@ import (
 	"gps-no-server/internal/core/controllers"
 	"gps-no-server/internal/core/repositories"
 	"gps-no-server/internal/core/services"
+	"gps-no-server/internal/events"
 	"gps-no-server/internal/infrastructure/database"
 	"gps-no-server/internal/infrastructure/mqtt"
+	"gps-no-server/internal/infrastructure/mqtt/handlers"
 	"gps-no-server/internal/infrastructure/mqtt/subscriptions"
 )
 
@@ -16,6 +18,9 @@ type Container struct {
 	Database           *database.GormDB
 	MqttClient         *mqtt.Client
 	EventStreamService *services.EventStreamService
+
+	StationEventBus     *events.StationEventBus
+	ClusterEventHandler *handlers.ClusterEventHandler
 
 	StationRepository *repositories.StationRepository
 	ClusterRepository *repositories.ClusterRepository
@@ -44,6 +49,7 @@ func NewContainer(cfg *config.Config) (*Container, error) {
 	container.initServices()
 	container.initControllers()
 	container.initMqtt()
+	container.initEvents()
 
 	return container, nil
 }
@@ -65,7 +71,7 @@ func (c *Container) initRepositories() {
 }
 
 func (c *Container) initServices() {
-	c.StationService = services.NewStationService(c.StationRepository)
+	c.StationService = services.NewStationService(c.StationRepository, c.StationEventBus)
 	c.ClusterService = services.NewClusterService(c.ClusterRepository)
 	c.RangingService = services.NewRangingService(c.RangingRepository, c.StationService, c.EventStreamService)
 	c.EventStreamService = services.NewEventStreamService()
@@ -76,6 +82,16 @@ func (c *Container) initControllers() {
 	c.ClusterController = controllers.NewClusterController(c.ClusterService)
 	c.RangingController = controllers.NewRangingController(c.RangingService)
 	c.EventController = controllers.NewEventStreamController(c.EventStreamService)
+}
+
+func (c *Container) initEvents() {
+	c.StationEventBus = events.NewStationEventBus()
+
+	clusterEventHandler := handlers.NewClusterEventHandler(c.MqttClient)
+
+	c.StationEventBus.Subscribe(events.StationAddedToCluster, func(event events.StationEvent) {
+		clusterEventHandler.HandleEvent(&event)
+	})
 }
 
 func (c *Container) initMqtt() {

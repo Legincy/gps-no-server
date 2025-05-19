@@ -17,9 +17,10 @@ type StationService struct {
 	stationEventBus   *events.StationEventBus
 }
 
-func NewStationService(stationRepository *repositories.StationRepository) *StationService {
+func NewStationService(stationRepository *repositories.StationRepository, stationEventBus *events.StationEventBus) *StationService {
 	return &StationService{
 		stationRepository: stationRepository,
+		stationEventBus:   stationEventBus,
 	}
 }
 
@@ -102,6 +103,7 @@ func (s *StationService) Update(ctx context.Context, station *models.Station, in
 
 	if updatedStation.ClusterID != nil &&
 		(oldClusterId == nil || *oldClusterId != *updatedStation.ClusterID) {
+
 		event := events.StationEvent{
 			Type:      events.StationAddedToCluster,
 			StationId: updatedStation.ID,
@@ -112,6 +114,7 @@ func (s *StationService) Update(ctx context.Context, station *models.Station, in
 		s.stationEventBus.Publish(&event)
 	}
 
+	// Station aus Cluster entfernt?
 	if oldClusterId != nil &&
 		(updatedStation.ClusterID == nil || *oldClusterId != *updatedStation.ClusterID) {
 		event := events.StationEvent{

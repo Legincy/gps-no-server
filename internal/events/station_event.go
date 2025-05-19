@@ -10,13 +10,14 @@ type StationEventType string
 const (
 	StationAddedToCluster     StationEventType = "station_added_to_cluster"
 	StationRemovedFromCluster StationEventType = "station_removed_from_cluster"
+	ClusterUpdated            StationEventType = "cluster_updated"
 )
 
 type StationEvent struct {
-	Type      StationEventType
-	ClusterId uint
-	StationId uint
-	Timestamp time.Time
+	Type      StationEventType `json:"type"`
+	ClusterId uint             `json:"cluster_id"`
+	StationId uint             `json:"station_id"`
+	Timestamp time.Time        `json:"timestamp"`
 }
 
 type StationEventBus struct {
