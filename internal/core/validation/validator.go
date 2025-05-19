@@ -12,7 +12,7 @@ type ValidationError struct {
 }
 
 func (v ValidationError) Error() string {
-	return fmt.Sprintf("%s: %s", v.Field, v.Error)
+	return fmt.Sprintf("%s: %s", v.Field, v.Error())
 }
 
 type ValidationErrors []ValidationError
