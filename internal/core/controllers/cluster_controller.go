@@ -1,10 +1,12 @@
 package controllers
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
 	"gps-no-server/internal/core/models/dtos"
 	"gps-no-server/internal/core/models/mappers"
 	"gps-no-server/internal/core/services"
+	"gps-no-server/internal/core/validation"
 	"strconv"
 )
 
@@ -57,6 +59,7 @@ func (c *ClusterController) GetById(ctx *gin.Context) {
 	response := map[string]interface{}{
 		"status":  200,
 		"message": "Successfully retrieved cluster data",
+		"payload": nil,
 	}
 
 	clusterId := ctx.Param("id")
@@ -82,7 +85,7 @@ func (c *ClusterController) GetById(ctx *gin.Context) {
 
 	if err != nil {
 		response["status"] = 404
-		response["message"] = "Cluster not found: " + err.Error()
+		response["message"] = "Error while retrieving cluster by id: " + err.Error()
 		ctx.JSON(404, response)
 		return
 	}
@@ -111,8 +114,16 @@ func (c *ClusterController) Create(ctx *gin.Context) {
 	includeParam := ctx.Query("include")
 
 	cluster, err := c.clusterService.Create(ctx, cluster, &includeParam)
-
 	if err != nil {
+		var validationErrors validation.ValidationErrors
+		if errors.As(err, &validationErrors) {
+			response["status"] = 400
+			response["message"] = "Validation failed"
+			response["errors"] = validationErrors
+			ctx.JSON(400, response)
+			return
+		}
+
 		response["status"] = 500
 		response["message"] = err.Error()
 		ctx.JSON(500, response)

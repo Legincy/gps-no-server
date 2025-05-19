@@ -6,17 +6,20 @@ import (
 	"gps-no-server/internal/common/logger"
 	"gps-no-server/internal/core/models"
 	"gps-no-server/internal/core/repositories"
+	"gps-no-server/internal/core/validation"
 	"gps-no-server/internal/infrastructure/http/dto"
 )
 
 type ClusterService struct {
 	clusterRepository *repositories.ClusterRepository
+	clusterValidator  *validation.ClusterValidator
 	log               zerolog.Logger
 }
 
 func NewClusterService(clusterRepository *repositories.ClusterRepository) *ClusterService {
 	return &ClusterService{
 		clusterRepository: clusterRepository,
+		clusterValidator:  validation.NewClusterValidator(clusterRepository),
 		log:               logger.GetLogger("cluster-service"),
 	}
 }
@@ -62,6 +65,10 @@ func (c *ClusterService) SaveAll(ctx context.Context, clusterList []*models.Clus
 }
 
 func (c *ClusterService) Create(ctx context.Context, cluster *models.Cluster, includeParam *string) (*models.Cluster, error) {
+	if err := c.clusterValidator.ValidateCreate(ctx, cluster); err != nil {
+		return nil, err
+	}
+
 	includes := dto.ParseIncludes(includeParam)
 
 	result, err := c.clusterRepository.Create(ctx, cluster, includes)
