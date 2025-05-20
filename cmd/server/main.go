@@ -88,9 +88,9 @@ func setupServer(cfg *config.Config, container *di.Container) (*http.Server, err
 
 	apiHandler := api.NewAPI(
 		container.StationController,
+		container.StationConfigController,
 		container.ClusterController,
 		container.RangingController,
-		container.EventController,
 	)
 	apiHandler.RegisterRoutes(router)
 

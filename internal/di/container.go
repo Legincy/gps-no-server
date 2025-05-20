@@ -22,18 +22,20 @@ type Container struct {
 	StationEventBus     *events.StationEventBus
 	ClusterEventHandler *handlers.ClusterEventHandler
 
-	StationRepository *repositories.StationRepository
-	ClusterRepository *repositories.ClusterRepository
-	RangingRepository *repositories.RangingRepository
+	StationRepository       *repositories.StationRepository
+	StationConfigRepository *repositories.StationConfigurationRepository
+	ClusterRepository       *repositories.ClusterRepository
+	RangingRepository       *repositories.RangingRepository
 
-	StationService *services.StationService
-	ClusterService *services.ClusterService
-	RangingService *services.RangingService
+	StationService       *services.StationService
+	StationConfigService *services.StationConfigurationService
+	ClusterService       *services.ClusterService
+	RangingService       *services.RangingService
 
-	StationController *controllers.StationController
-	ClusterController *controllers.ClusterController
-	RangingController *controllers.RangingController
-	EventController   *controllers.EventStreamController
+	StationController       *controllers.StationController
+	StationConfigController *controllers.StationConfigController
+	ClusterController       *controllers.ClusterController
+	RangingController       *controllers.RangingController
 }
 
 func NewContainer(cfg *config.Config) (*Container, error) {
@@ -66,12 +68,14 @@ func (c *Container) initDatabase() error {
 
 func (c *Container) initRepositories() {
 	c.StationRepository = repositories.NewStationRepository(c.Database.DB)
+	c.StationConfigRepository = repositories.NewStationConfigRepository(c.Database.DB)
 	c.ClusterRepository = repositories.NewClusterRepository(c.Database.DB)
 	c.RangingRepository = repositories.NewRangingRepository(c.Database.DB)
 }
 
 func (c *Container) initServices() {
-	c.StationService = services.NewStationService(c.StationRepository, c.StationEventBus)
+	c.StationService = services.NewStationService(c.StationRepository)
+	c.StationConfigService = services.NewStationConfigService(c.StationConfigRepository)
 	c.ClusterService = services.NewClusterService(c.ClusterRepository)
 	c.RangingService = services.NewRangingService(c.RangingRepository, c.StationService, c.EventStreamService)
 	c.EventStreamService = services.NewEventStreamService()
@@ -79,9 +83,9 @@ func (c *Container) initServices() {
 
 func (c *Container) initControllers() {
 	c.StationController = controllers.NewStationController(c.StationService)
+	c.StationConfigController = controllers.NewStationConfigController(c.StationConfigService)
 	c.ClusterController = controllers.NewClusterController(c.ClusterService)
-	c.RangingController = controllers.NewRangingController(c.RangingService)
-	c.EventController = controllers.NewEventStreamController(c.EventStreamService)
+	c.RangingController = controllers.NewRangingController(c.RangingService, c.EventStreamService)
 }
 
 func (c *Container) initEvents() {

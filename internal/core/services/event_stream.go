@@ -96,12 +96,10 @@ func (s *EventStreamService) Publish(eventType string, data interface{}) error {
 	s.eventLock.RLock()
 	defer s.eventLock.RUnlock()
 
-	// First, publish to the general channel
 	if channels, exists := s.clients[eventType]; exists {
 		s.publishToChannels(eventType, channels, message)
 	}
 
-	// If we have a valid ID, also publish to the specific ID channel
 	if rangingID > 0 {
 		specificKey := fmt.Sprintf("%s:%d", eventType, rangingID)
 		s.log.Debug().Str("key", specificKey).Msg("Publishing to specific ranging ID")

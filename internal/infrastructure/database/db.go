@@ -47,6 +47,7 @@ func NewGormDB(cfg *config.DatabaseConfig) (*GormDB, error) {
 		&models.Station{},
 		&models.Cluster{},
 		&models.Ranging{},
+		&models.StationConfiguration{},
 	); err != nil {
 		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}

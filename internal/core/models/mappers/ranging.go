@@ -36,6 +36,14 @@ func FromRanging(ranging *models.Ranging, includeParam *string) *dtos.RangingDto
 	return response
 }
 
+func ToRanging(rangingDto *dtos.RangingDto) *models.Ranging {
+	return &models.Ranging{
+		RawDistance:   rangingDto.RawDistance,
+		SourceID:      rangingDto.SourceID,
+		DestinationID: rangingDto.DestinationID,
+	}
+}
+
 func FromRangingList(rangingList []*models.Ranging, includeParam *string) []*dtos.RangingDto {
 	var response []*dtos.RangingDto
 

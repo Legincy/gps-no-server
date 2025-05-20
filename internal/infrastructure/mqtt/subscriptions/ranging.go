@@ -74,8 +74,10 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		rangingModels = append(rangingModels, rangingModel)
 	}
 
-	if _, err := c.rangingService.SaveAll(ctx, rangingModels); err != nil {
-		c.log.Error().Err(err).Msg("Failed to save rangingService data")
-		return
-	}
+	/*
+		if _, err := c.rangingService.UpdateAllOrCreate(ctx, rangingModels, nil); err != nil {
+			c.log.Error().Err(err).Msg("Failed to save rangingService data")
+			return
+		}
+	*/
 }
