@@ -9,58 +9,113 @@ import (
 	"gps-no-server/internal/common/logger"
 	"gps-no-server/internal/core/models/dtos"
 	"sync"
+	"time"
 )
 
+type client struct {
+	id      string
+	channel chan []byte
+	done    chan struct{}
+}
+
 type EventStreamService struct {
-	clients   map[string]map[chan []byte]bool
-	eventLock sync.RWMutex
-	log       zerolog.Logger
+	clients        map[string]map[string]*client
+	eventLock      sync.RWMutex
+	log            zerolog.Logger
+	maxClients     int
+	clientTimeout  time.Duration
+	messageTimeout time.Duration
 }
 
 func NewEventStreamService() *EventStreamService {
 	return &EventStreamService{
-		clients: make(map[string]map[chan []byte]bool),
-		log:     logger.GetLogger("event-stream-service"),
+		clients:        make(map[string]map[string]*client),
+		log:            logger.GetLogger("event-stream-service"),
+		maxClients:     1000,
+		clientTimeout:  30 * time.Minute,
+		messageTimeout: 5 * time.Second,
 	}
 }
 
 func (s *EventStreamService) Subscribe(ctx context.Context, eventType string, filterId ...uint) (<-chan []byte, error) {
-	s.eventLock.Lock()
-	defer s.eventLock.Unlock()
-
 	subscriptionKey := eventType
 	if len(filterId) > 0 && filterId[0] > 0 {
 		subscriptionKey = fmt.Sprintf("%s:%d", eventType, filterId[0])
 		s.log.Info().Str("key", subscriptionKey).Msg("Creating subscription for specific ID")
 	}
 
-	messageChannel := make(chan []byte, 1024)
+	clientId := fmt.Sprintf("%s_%d", subscriptionKey, time.Now().UnixNano())
+
+	s.eventLock.Lock()
+	if s.getTotalClientCount() >= s.maxClients {
+		s.eventLock.Unlock()
+		return nil, fmt.Errorf("maximum number of clients reached")
+	}
+
+	messageChannel := make(chan []byte, 100)
+	doneChannel := make(chan struct{})
+
+	newClient := &client{
+		id:      clientId,
+		channel: messageChannel,
+		done:    doneChannel,
+	}
 
 	if _, exists := s.clients[subscriptionKey]; !exists {
-		s.clients[subscriptionKey] = make(map[chan []byte]bool)
+		s.clients[subscriptionKey] = make(map[string]*client)
 	}
-	s.clients[subscriptionKey][messageChannel] = true
+	s.clients[subscriptionKey][clientId] = newClient
+	s.eventLock.Unlock()
 
 	go func() {
-		<-ctx.Done()
-		s.eventLock.Lock()
-		defer s.eventLock.Unlock()
+		defer func() {
+			s.removeClient(subscriptionKey, clientId)
+			close(doneChannel)
+			close(messageChannel)
+		}()
 
-		if channels, exists := s.clients[subscriptionKey]; exists {
-			delete(channels, messageChannel)
-			if len(channels) == 0 {
-				delete(s.clients, subscriptionKey)
-			}
+		// Timeout-Timer starten
+		timer := time.NewTimer(s.clientTimeout)
+		defer timer.Stop()
+
+		select {
+		case <-ctx.Done():
+			s.log.Debug().Str("client", clientId).Msg("Client context cancelled")
+		case <-timer.C:
+			s.log.Warn().Str("client", clientId).Msg("Client timeout reached")
+		case <-doneChannel:
+			s.log.Debug().Str("client", clientId).Msg("Client done signal received")
 		}
-
-		close(messageChannel)
 	}()
 
 	return messageChannel, nil
 }
 
-func (s *EventStreamService) Unsubscribe(stationId string) error {
-	return nil
+func (s *EventStreamService) removeClient(subscriptionKey, clientId string) {
+	s.eventLock.Lock()
+	defer s.eventLock.Unlock()
+
+	if clients, exists := s.clients[subscriptionKey]; exists {
+		if client, exists := clients[clientId]; exists {
+			select {
+			case client.done <- struct{}{}:
+			default:
+			}
+			delete(clients, clientId)
+		}
+
+		if len(clients) == 0 {
+			delete(s.clients, subscriptionKey)
+		}
+	}
+}
+
+func (s *EventStreamService) getTotalClientCount() int {
+	total := 0
+	for _, clients := range s.clients {
+		total += len(clients)
+	}
+	return total
 }
 
 func (s *EventStreamService) Publish(eventType string, data interface{}) error {
@@ -89,54 +144,69 @@ func (s *EventStreamService) Publish(eventType string, data interface{}) error {
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("Error marshalling event data: %s", err)
+		return fmt.Errorf("error marshalling event data: %s", err)
 	}
-	message := []byte(fmt.Sprintf("event : %s\ndata: %s\n\n", eventType, jsonData))
+	message := []byte(fmt.Sprintf("event: %s\ndata: %s\n\n", eventType, jsonData))
 
 	s.eventLock.RLock()
 	defer s.eventLock.RUnlock()
 
-	if channels, exists := s.clients[eventType]; exists {
-		s.publishToChannels(eventType, channels, message)
+	// Publish an alle Clients des Event-Typs
+	if clients, exists := s.clients[eventType]; exists {
+		s.publishToClients(eventType, clients, message)
 	}
 
+	// Publish an spezifische Ranging ID
 	if rangingID > 0 {
 		specificKey := fmt.Sprintf("%s:%d", eventType, rangingID)
 		s.log.Debug().Str("key", specificKey).Msg("Publishing to specific ranging ID")
 
-		if channels, exists := s.clients[specificKey]; exists {
-			s.publishToChannels(specificKey, channels, message)
+		if clients, exists := s.clients[specificKey]; exists {
+			s.publishToClients(specificKey, clients, message)
 		}
 	}
 
 	return nil
 }
 
-func (s *EventStreamService) publishToChannels(key string, channels map[chan []byte]bool, message []byte) {
-	var slowClients []chan []byte
+func (s *EventStreamService) publishToClients(key string, clients map[string]*client, message []byte) {
+	var deadClients []string
 
-	for ch := range channels {
+	for clientId, client := range clients {
 		select {
-		case ch <- message:
+		case client.channel <- message:
+		case <-time.After(s.messageTimeout):
+			s.log.Warn().Str("client", clientId).Str("event_type", key).Msg("Client message timeout, marking for removal")
+			deadClients = append(deadClients, clientId)
+		case <-client.done:
+			deadClients = append(deadClients, clientId)
 		default:
-			s.log.Warn().Str("event_type", key).Msg("Channel is full, skipping message")
-			slowClients = append(slowClients, ch)
+			s.log.Warn().Str("client", clientId).Str("event_type", key).Msg("Client channel full, marking for removal")
+			deadClients = append(deadClients, clientId)
 		}
 	}
 
-	if len(slowClients) > 0 {
-		s.eventLock.Lock()
-		if channelsMap, stillExists := s.clients[key]; stillExists {
-			for _, ch := range slowClients {
-				delete(channelsMap, ch)
-				close(ch)
-			}
+	if len(deadClients) > 0 {
+		go func() {
+			s.eventLock.Lock()
+			defer s.eventLock.Unlock()
 
-			if len(channelsMap) == 0 {
-				delete(s.clients, key)
+			if clientsMap, stillExists := s.clients[key]; stillExists {
+				for _, clientId := range deadClients {
+					if client, exists := clientsMap[clientId]; exists {
+						select {
+						case client.done <- struct{}{}:
+						default:
+						}
+						delete(clientsMap, clientId)
+					}
+				}
+
+				if len(clientsMap) == 0 {
+					delete(s.clients, key)
+				}
 			}
-		}
-		s.eventLock.Unlock()
+		}()
 	}
 }
 
@@ -145,44 +215,136 @@ func (s *EventStreamService) HandleSSERequest(c *gin.Context, eventType string, 
 	c.Writer.Header().Set("Cache-Control", "no-cache")
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Writer.Header().Set("Transfer-Encoding", "chunked")
+	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+	c.Writer.Header().Set("Access-Control-Allow-Headers", "Cache-Control")
 	c.Writer.Flush()
 
-	ctx, cancel := context.WithCancel(c.Request.Context())
+	ctx, cancel := context.WithTimeout(c.Request.Context(), s.clientTimeout)
 	defer cancel()
 
 	eventChan, err := s.Subscribe(ctx, eventType, filterId...)
 	if err != nil {
-		_ = c.AbortWithError(500, err)
+		s.log.Error().Err(err).Msg("Failed to subscribe to events")
+		c.JSON(500, gin.H{"error": "Failed to subscribe to events"})
 		return
 	}
 
 	clientGone := c.Writer.CloseNotify()
 	go func() {
-		<-clientGone
-		cancel()
+		select {
+		case <-clientGone:
+			s.log.Debug().Msg("Client disconnected")
+			cancel()
+		case <-ctx.Done():
+			s.log.Debug().Msg("Context cancelled")
+		}
 	}()
 
 	idInfo := ""
 	if len(filterId) > 0 && filterId[0] > 0 {
 		idInfo = fmt.Sprintf(`, "id": %d`, filterId[0])
 	}
-	fmt.Fprintf(c.Writer, "event: connected\ndata: {\"status\":\"connected\"%s}\n\n", idInfo)
+
+	connectMsg := fmt.Sprintf("event: connected\ndata: {\"status\":\"connected\"%s}\n\n", idInfo)
+	if _, err := c.Writer.Write([]byte(connectMsg)); err != nil {
+		s.log.Error().Err(err).Msg("Failed to write connection message")
+		return
+	}
 	c.Writer.Flush()
+
+	heartbeat := time.NewTicker(30 * time.Second)
+	defer heartbeat.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
+			s.log.Debug().Msg("SSE context done")
 			return
-		case message, ok := <-eventChan:
-			if !ok {
+
+		case <-heartbeat.C:
+			heartbeatMsg := "event: heartbeat\ndata: {\"type\":\"heartbeat\"}\n\n"
+			if _, err := c.Writer.Write([]byte(heartbeatMsg)); err != nil {
+				s.log.Error().Err(err).Msg("Failed to write heartbeat")
 				return
 			}
-			_, err := c.Writer.Write(message)
-			if err != nil {
+			c.Writer.Flush()
+
+		case message, ok := <-eventChan:
+			if !ok {
+				s.log.Debug().Msg("Event channel closed")
+				return
+			}
+
+			if _, err := c.Writer.Write(message); err != nil {
 				s.log.Error().Err(err).Msg("Failed to write SSE message")
 				return
 			}
 			c.Writer.Flush()
 		}
 	}
+}
+
+func (s *EventStreamService) GetStats() map[string]interface{} {
+	s.eventLock.RLock()
+	defer s.eventLock.RUnlock()
+
+	stats := make(map[string]interface{})
+	stats["total_subscriptions"] = len(s.clients)
+	stats["total_clients"] = s.getTotalClientCount()
+
+	subscriptions := make(map[string]int)
+	for key, clients := range s.clients {
+		subscriptions[key] = len(clients)
+	}
+	stats["subscriptions"] = subscriptions
+
+	return stats
+}
+
+func (s *EventStreamService) Shutdown(ctx context.Context) error {
+	s.log.Info().Msg("Starting EventStreamService shutdown")
+
+	s.eventLock.Lock()
+	defer s.eventLock.Unlock()
+
+	totalClients := s.getTotalClientCount()
+	if totalClients > 0 {
+		s.log.Info().Msgf("Shutting down %d active clients", totalClients)
+
+		for eventType, clients := range s.clients {
+			for clientId, client := range clients {
+				s.log.Debug().
+					Str("event_type", eventType).
+					Str("client_id", clientId).
+					Msg("Closing client connection")
+
+				select {
+				case client.done <- struct{}{}:
+				default:
+					// Channel ist bereits geschlossen oder voll
+				}
+
+				// Close channel, falls noch offen
+				select {
+				case <-client.channel:
+				default:
+					close(client.channel)
+				}
+			}
+		}
+
+		s.clients = make(map[string]map[string]*client)
+		s.log.Info().Msg("All clients disconnected")
+	}
+
+	s.log.Info().Msg("EventStreamService shutdown completed")
+	return nil
+}
+
+func (s *EventStreamService) IsHealthy() bool {
+	s.eventLock.RLock()
+	defer s.eventLock.RUnlock()
+
+	totalClients := s.getTotalClientCount()
+	return totalClients < s.maxClients
 }

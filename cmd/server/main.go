@@ -32,9 +32,21 @@ func main() {
 	}
 	defer container.Cleanup()
 
-	if err := container.MqttClient.Connect(); err != nil {
-		appLog.Error().Err(err).Msg("Error connecting to MQTT broker")
+	maxRetries := 5
+	for i := 0; i < maxRetries; i++ {
+		if err := container.MqttClient.Connect(); err != nil {
+			appLog.Warn().Err(err).Msgf("MQTT connection attempt %d/%d failed", i+1, maxRetries)
+			if i == maxRetries-1 {
+				appLog.Error().Err(err).Msg("Failed to connect to MQTT after max retries")
+			} else {
+				time.Sleep(time.Duration(i+1) * time.Second)
+			}
+		} else {
+			appLog.Info().Msg("MQTT connected successfully")
+			break
+		}
 	}
+
 	if err := container.MqttClient.SubscribeRegistry(); err != nil {
 		appLog.Error().Err(err).Msg("Error subscribing to MQTT topics")
 	}
@@ -43,6 +55,8 @@ func main() {
 	if err != nil {
 		appLog.Fatal().Err(err).Msg("Error while initializing server")
 	}
+
+	setupHealthCheck(server, container)
 
 	// Graceful Shutdown
 	quit := make(chan os.Signal, 1)
@@ -71,7 +85,15 @@ func setupServer(cfg *config.Config, container *di.Container) (*http.Server, err
 		router.Use(gin.Logger())
 	}
 
-	router.Use(gin.Recovery())
+	router.Use(gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		if err, ok := recovered.(string); ok {
+			log.Error().Str("error", err).Msg("Panic recovered")
+		}
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"status":  500,
+			"message": "Internal server error",
+		})
+	}))
 
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -86,6 +108,20 @@ func setupServer(cfg *config.Config, container *di.Container) (*http.Server, err
 		c.Next()
 	})
 
+	router.Use(func(c *gin.Context) {
+		if c.Request.URL.Path == "/api/v1/rangings/stream" ||
+			c.Request.URL.Path == "/api/v1/rangings/stream/*" {
+			c.Next()
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
+		defer cancel()
+
+		c.Request = c.Request.WithContext(ctx)
+		c.Next()
+	})
+
 	apiHandler := api.NewAPI(
 		container.StationController,
 		container.StationConfigController,
@@ -95,11 +131,13 @@ func setupServer(cfg *config.Config, container *di.Container) (*http.Server, err
 	apiHandler.RegisterRoutes(router)
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port),
-		Handler:      router,
-		ReadTimeout:  cfg.Server.ReadTimeout * time.Second,
-		WriteTimeout: cfg.Server.WriteTimeout * time.Second,
-		IdleTimeout:  120 * time.Second,
+		Addr:              fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port),
+		Handler:           router,
+		ReadTimeout:       cfg.Server.ReadTimeout * time.Second,
+		WriteTimeout:      cfg.Server.WriteTimeout * time.Second,
+		IdleTimeout:       120 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 
 	go func() {
@@ -111,4 +149,37 @@ func setupServer(cfg *config.Config, container *di.Container) (*http.Server, err
 
 	time.Sleep(100 * time.Millisecond)
 	return server, nil
+}
+
+func setupHealthCheck(server *http.Server, container *di.Container) {
+	if ginRouter, ok := server.Handler.(*gin.Engine); ok {
+		ginRouter.GET("/health", func(c *gin.Context) {
+			health := gin.H{
+				"status":    "ok",
+				"timestamp": time.Now().UTC(),
+			}
+
+			if container.EventStreamService != nil {
+				health["event_stream"] = container.EventStreamService.GetStats()
+			}
+
+			if container.Database != nil {
+				if db, err := container.Database.DB.DB(); err == nil {
+					if err := db.Ping(); err != nil {
+						health["database"] = "error"
+						health["database_error"] = err.Error()
+						c.JSON(503, health)
+						return
+					}
+					health["database"] = "ok"
+				}
+			}
+
+			if container.MqttClient != nil {
+				health["mqtt"] = "ok"
+			}
+
+			c.JSON(200, health)
+		})
+	}
 }

@@ -55,3 +55,18 @@ func (s *BaseService[T]) Delete(ctx context.Context, entity *T, includeParam *st
 	includes := dto.ParseIncludes(includeParam)
 	return s.Repository.Delete(ctx, entity, includes)
 }
+
+func (s *BaseService[T]) UpdateOrCreate(ctx context.Context, entity *T, includeParam *string) (*T, error) {
+	includes := dto.ParseIncludes(includeParam)
+
+	updatedEntity, err := s.Repository.Update(ctx, entity, includes)
+	if err == nil {
+		return updatedEntity, nil
+	}
+
+	if err.Error() == "record not found" {
+		return s.Repository.Create(ctx, entity, includes)
+	}
+
+	return nil, err
+}

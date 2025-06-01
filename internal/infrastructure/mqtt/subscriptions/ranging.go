@@ -3,6 +3,7 @@ package subscriptions
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/rs/zerolog"
 	"gps-no-server/internal/common/logger"
@@ -74,10 +75,13 @@ func (c *RangingSubscription) HandleMessage(message mqtt.Message) {
 		rangingModels = append(rangingModels, rangingModel)
 	}
 
-	/*
-		if _, err := c.rangingService.UpdateAllOrCreate(ctx, rangingModels, nil); err != nil {
-			c.log.Error().Err(err).Msg("Failed to save rangingService data")
-			return
+	for _, rangingModel := range rangingModels {
+		fmt.Println(rangingModel)
+		if _, err := c.rangingService.UpdateOrCreate(ctx, rangingModel, nil); err != nil {
+			c.log.Error().Err(err).Str("source", rangingModel.Source.MacAddress).
+				Str("destination", rangingModel.Destination.MacAddress).
+				Msg("Failed to update or create ranging")
+			continue
 		}
-	*/
+	}
 }
