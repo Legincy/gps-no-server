@@ -14,6 +14,11 @@ type RangingRepository struct {
 	log zerolog.Logger
 }
 
+func (r *RangingRepository) Delete(ctx context.Context, id uint) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewRangingRepository(db *gorm.DB) *RangingRepository {
 	baseRepository := &BaseRepository[models.Ranging]{
 		DB:         db,
@@ -50,4 +55,24 @@ func (r *RangingRepository) FindBySourceStationAndDestinationStation(ctx context
 	}
 
 	return &ranging, result.Error
+}
+
+func (r *RangingRepository) FindAll(ctx context.Context) ([]*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *RangingRepository) FindByID(ctx context.Context, id uint) (*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *RangingRepository) Create(ctx context.Context, ranging *models.Ranging) (*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *RangingRepository) Update(ctx context.Context, ranging *models.Ranging) (*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
 }

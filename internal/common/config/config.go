@@ -13,6 +13,14 @@ type Config struct {
 	Server   ServerConfig   `json:"server"`
 	Database DatabaseConfig `json:"database"`
 	Mqtt     MqttConfig     `json:"mqtt"`
+	Influx   InfluxConfig   `json:"influx"` // Neu hinzufügen
+}
+
+type InfluxConfig struct {
+	URL    string `json:"url"`
+	Token  string `json:"token"`
+	Org    string `json:"org"`
+	Bucket string `json:"bucket"`
 }
 
 type ServerConfig struct {
@@ -23,6 +31,7 @@ type ServerConfig struct {
 	ReadTimeout     time.Duration `json:"read_timeout"`
 	WriteTimeout    time.Duration `json:"write_timeout"`
 	ShutdownTimeout time.Duration `json:"shutdown_timeout"`
+	IdleTimeout     time.Duration `json:"idle_timeout"`
 }
 
 type DatabaseConfig struct {
@@ -72,6 +81,7 @@ func Load() (*Config, error) {
 			ReadTimeout:     getEnvAsDuration("SERVER_READ_TIMEOUT", 5*time.Second),
 			WriteTimeout:    getEnvAsDuration("SERVER_WRITE_TIMEOUT", 5*time.Second),
 			ShutdownTimeout: getEnvAsDuration("SERVER_SHUTDOWN_TIMEOUT", 5*time.Second),
+			IdleTimeout:     getEnvAsDuration("SERVER_IDLE_TIMEOUT", 60*time.Second),
 		},
 		Database: DatabaseConfig{
 			Host:     getEnv("DB_HOST", "localhost"),
@@ -92,6 +102,12 @@ func Load() (*Config, error) {
 			AutoReconnect:        getEnvAsBool("MQTT_AUTO_RECONNECT", true),
 			MaxReconnectInterval: getEnvAsDuration("MQTT_MAX_RECONNECT", 1*time.Second),
 			CleanSession:         getEnvAsBool("MQTT_CLEAN_SESSION", true),
+		},
+		Influx: InfluxConfig{
+			URL:    getEnv("INFLUX_URL", "http://localhost:8086"),
+			Token:  getEnv("INFLUX_TOKEN", ""),
+			Org:    getEnv("INFLUX_ORG", ""),
+			Bucket: getEnv("INFLUX_BUCKET", "measurements"),
 		},
 	}
 

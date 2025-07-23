@@ -28,14 +28,38 @@ func NewStationRepository(db *gorm.DB) *StationRepository {
 	}
 }
 
-func (s *StationRepository) FindByMac(ctx context.Context, macAddress string, includes map[string]bool) (*models.Station, error) {
-	var station models.Station
-	result := s.db.WithContext(ctx).Where("mac_address = ?", macAddress).First(&station)
-	return &station, result.Error
-}
-
 func (s *StationRepository) FindByIdentifier(ctx context.Context, identifier string, includes map[string]bool) (*models.Station, error) {
 	var station models.Station
 	result := s.db.WithContext(ctx).Where("identifier = ?", identifier).First(&station)
 	return &station, result.Error
+}
+
+func (s *StationRepository) FindAll(ctx context.Context) ([]*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StationRepository) FindByID(ctx context.Context, id uint) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StationRepository) FindByMac(ctx context.Context, mac string) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StationRepository) Create(ctx context.Context, station *models.Station) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StationRepository) Update(ctx context.Context, station *models.Station) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *StationRepository) Delete(ctx context.Context, id uint) error {
+	//TODO implement me
+	panic("implement me")
 }

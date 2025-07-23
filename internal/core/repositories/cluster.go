@@ -38,3 +38,28 @@ func (c *ClusterRepository) FindByMac(ctx context.Context, macAddress string, in
 
 	return &cluster, result.Error
 }
+
+func (c *ClusterRepository) FindAll(ctx context.Context) ([]*models.Cluster, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *ClusterRepository) FindByID(ctx context.Context, id uint) (*models.Cluster, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *ClusterRepository) Create(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *ClusterRepository) Update(ctx context.Context, cluster *models.Cluster) (*models.Cluster, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *ClusterRepository) Delete(ctx context.Context, id uint) error {
+	//TODO implement me
+	panic("implement me")
+}

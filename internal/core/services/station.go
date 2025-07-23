@@ -2,64 +2,50 @@ package services
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/rs/zerolog"
-	"gorm.io/gorm"
 	"gps-no-server/internal/common/logger"
 	"gps-no-server/internal/core/models"
-	"gps-no-server/internal/core/repositories"
-	"gps-no-server/internal/infrastructure/http/dto"
+	"gps-no-server/internal/di/interfaces"
 )
 
 type StationService struct {
-	*BaseService[models.Station]
-	stationRepository *repositories.StationRepository
+	stationRepository interfaces.StationRepository
 	log               zerolog.Logger
 }
 
-func NewStationService(stationRepository *repositories.StationRepository) *StationService {
-	baseService := NewBaseService[models.Station](
-		stationRepository,
-		"station",
-	)
-
+func NewStationService(stationRepository interfaces.StationRepository) *StationService {
 	return &StationService{
-		BaseService:       baseService,
 		stationRepository: stationRepository,
 		log:               logger.GetLogger("services-station"),
 	}
 }
 
-func (s *StationService) GetByMac(ctx context.Context, mac string, includeParam *string) (*models.Station, error) {
-	includes := dto.ParseIncludes(includeParam)
-	return s.stationRepository.FindByMac(ctx, mac, includes)
+func (s *StationService) GetAll(ctx context.Context) ([]*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s *StationService) GetByIdentifier(ctx context.Context, identifier string, includeParam *string) (*models.Station, error) {
-	includes := dto.ParseIncludes(includeParam)
-	return s.stationRepository.FindByIdentifier(ctx, identifier, includes)
+func (s *StationService) GetByID(ctx context.Context, id uint) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s *StationService) UpdateOrCreate(ctx context.Context, station *models.Station, includeParam *string) (*models.Station, error) {
-	includes := dto.ParseIncludes(includeParam)
+func (s *StationService) GetByMac(ctx context.Context, mac string) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
-	existingStation, err := s.stationRepository.FindByMac(ctx, station.MacAddress, includes)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			createdStation, err := s.stationRepository.Create(ctx, station, includes)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create station: %w", err)
-			}
-			return createdStation, nil
-		}
-		return nil, fmt.Errorf("error finding station: %w", err)
-	}
+func (s *StationService) Create(ctx context.Context, station *models.Station) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
-	if existingStation != nil {
+func (s *StationService) Update(ctx context.Context, station *models.Station) (*models.Station, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
-		return existingStation, nil
-	}
-
-	return nil, fmt.Errorf("unexpected condition in UpdateOrCreate")
+func (s *StationService) Delete(ctx context.Context, id uint) error {
+	//TODO implement me
+	panic("implement me")
 }

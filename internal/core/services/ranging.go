@@ -5,49 +5,41 @@ import (
 	"github.com/rs/zerolog"
 	"gps-no-server/internal/common/logger"
 	"gps-no-server/internal/core/models"
-	"gps-no-server/internal/core/repositories"
-	"gps-no-server/internal/infrastructure/http/dto"
+	"gps-no-server/internal/di/interfaces"
 )
 
 type RangingService struct {
-	*BaseService[models.Ranging]
-	rangingRepository *repositories.RangingRepository
-	stationService    *StationService
-	eventPublisher    *RangingEventPublisher
+	rangingRepository interfaces.RangingRepository
+	influx            interfaces.InfluxConnection
 	log               zerolog.Logger
 }
 
-func NewRangingService(rangingRepository *repositories.RangingRepository, stationService *StationService, eventStreamService *EventStreamService) *RangingService {
-	baseService := NewBaseService[models.Ranging](
-		rangingRepository,
-		"ranging",
-	)
-
+func NewRangingService(rangingRepository interfaces.RangingRepository, influx interfaces.InfluxConnection) *RangingService {
 	service := &RangingService{
-		BaseService:       baseService,
 		rangingRepository: rangingRepository,
-		stationService:    stationService,
+		influx:            influx,
 		log:               logger.GetLogger("ranging-service"),
-	}
-
-	if eventStreamService != nil {
-		service.eventPublisher = NewRangingEventPublisher(eventStreamService)
 	}
 
 	return service
 }
 
-func (s *RangingService) GetByMac(ctx context.Context, mac string, includeParam *string) ([]*models.Ranging, error) {
-	includes := dto.ParseIncludes(includeParam)
-
-	return s.rangingRepository.FindByMac(ctx, mac, includes)
+func (s *RangingService) GetAll(ctx context.Context) ([]*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
-func (s *RangingService) GetBySourceStationAndDestinationStation(ctx context.Context, source *models.Station, destination *models.Station, includes map[string]bool) (*models.Ranging, error) {
-	ranging, err := s.rangingRepository.FindBySourceStationAndDestinationStation(ctx, source, destination, includes)
-	if err != nil {
-		return nil, err
-	}
+func (s *RangingService) GetByID(ctx context.Context, id uint) (*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
-	return ranging, nil
+func (s *RangingService) Create(ctx context.Context, ranging *models.Ranging) (*models.Ranging, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *RangingService) StoreMeasurement(ctx context.Context, ranging *models.Ranging) error {
+	//TODO implement me
+	panic("implement me")
 }
