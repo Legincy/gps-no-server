@@ -1,0 +1,164 @@
+basePath: /api/v1
+host: localhost:8080
+info:
+  contact: {}
+  description: Dies ist die API für den GPS-NO Server.
+  title: GPS-NO Server API
+  version: "1.0"
+paths:
+  /clusters:
+    get:
+      description: Gibt alle Cluster wieder
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cluster wiedergegeben
+          schema:
+            type: string
+      summary: Gibt alle Cluster wieder
+      tags:
+      - Cluster
+    post:
+      description: Erstellt ein Cluster
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cluster erstellt
+          schema:
+            type: string
+      summary: Erstellt ein Cluster
+      tags:
+      - Cluster
+  /clusters/{ID}:
+    delete:
+      description: Löscht ein Cluster basierend auf der angegebenen ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cluster gelöscht
+          schema:
+            type: string
+      summary: Löscht ein Cluster
+      tags:
+      - Cluster
+    get:
+      description: Gibt ein Cluster basierend auf der angegebenen ID wieder
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cluster wiedergegeben
+          schema:
+            type: string
+      summary: Gibt ein Cluster wieder
+      tags:
+      - Cluster
+    put:
+      description: Updated ein Cluster basierend auf der angegebenen ID
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cluster geupdated
+          schema:
+            type: string
+      summary: Updated ein Cluster
+      tags:
+      - Cluster
+  /measurements/cluster/{Mac}:
+    get:
+      description: Gibt die Messungen eines Clusters basierend auf der angegebenen
+        Mac Adresse wieder
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Messungen wiedergegeben
+          schema:
+            type: string
+      summary: Gibt die Messungen eines Clusters wieder
+      tags:
+      - Station
+      - Measurement
+      - Cluster
+  /measurements/stations/{Mac}:
+    get:
+      description: Gibt die Messung einer Station basierend auf der angegebenen Mac
+        Adresse wieder
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Messung wiedergegeben
+          schema:
+            type: string
+      summary: Gibt die Messung einer Station wieder
+      tags:
+      - Station
+      - Measurement
+  /stations:
+    get:
+      description: Gibt alle Stationen wieder
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Alle Stationen wiedergegeben
+          schema:
+            type: string
+      summary: Gibt alle Stationen wieder
+      tags:
+      - Station
+    post:
+      description: Erstellt eine Station
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station erstellt
+          schema:
+            type: string
+      summary: Erstellt eine Station
+      tags:
+      - Station
+  /stations/{Mac}:
+    delete:
+      description: Löscht eine Station basierend auf der angegebenen Mac Adresse
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station gelöscht
+          schema:
+            type: string
+      summary: Löscht eine Station
+      tags:
+      - Station
+    get:
+      description: Gibt eine Station basierend auf der angegebenen Mac Adresse wieder
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station wiedergegeben
+          schema:
+            type: string
+      summary: Gibt eine Station wieder
+      tags:
+      - Station
+    put:
+      description: Updated eine Station basierend auf der angegebenen Mac Adresse
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Station geupdated
+          schema:
+            type: string
+      summary: Updated eine Station
+      tags:
+      - Station
+swagger: "2.0"

@@ -1,0 +1,244 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Dies ist die API für den GPS-NO Server.",
+        "title": "GPS-NO Server API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api/v1",
+    "paths": {
+        "/clusters": {
+            "get": {
+                "description": "Gibt alle Cluster wieder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cluster"
+                ],
+                "summary": "Gibt alle Cluster wieder",
+                "responses": {
+                    "200": {
+                        "description": "Cluster wiedergegeben",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Erstellt ein Cluster",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cluster"
+                ],
+                "summary": "Erstellt ein Cluster",
+                "responses": {
+                    "200": {
+                        "description": "Cluster erstellt",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/clusters/{ID}": {
+            "get": {
+                "description": "Gibt ein Cluster basierend auf der angegebenen ID wieder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cluster"
+                ],
+                "summary": "Gibt ein Cluster wieder",
+                "responses": {
+                    "200": {
+                        "description": "Cluster wiedergegeben",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updated ein Cluster basierend auf der angegebenen ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cluster"
+                ],
+                "summary": "Updated ein Cluster",
+                "responses": {
+                    "200": {
+                        "description": "Cluster geupdated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Löscht ein Cluster basierend auf der angegebenen ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Cluster"
+                ],
+                "summary": "Löscht ein Cluster",
+                "responses": {
+                    "200": {
+                        "description": "Cluster gelöscht",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/measurements/cluster/{Mac}": {
+            "get": {
+                "description": "Gibt die Messungen eines Clusters basierend auf der angegebenen Mac Adresse wieder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station",
+                    "Measurement",
+                    "Cluster"
+                ],
+                "summary": "Gibt die Messungen eines Clusters wieder",
+                "responses": {
+                    "200": {
+                        "description": "Messungen wiedergegeben",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/measurements/stations/{Mac}": {
+            "get": {
+                "description": "Gibt die Messung einer Station basierend auf der angegebenen Mac Adresse wieder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station",
+                    "Measurement"
+                ],
+                "summary": "Gibt die Messung einer Station wieder",
+                "responses": {
+                    "200": {
+                        "description": "Messung wiedergegeben",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/stations": {
+            "get": {
+                "description": "Gibt alle Stationen wieder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station"
+                ],
+                "summary": "Gibt alle Stationen wieder",
+                "responses": {
+                    "200": {
+                        "description": "Alle Stationen wiedergegeben",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Erstellt eine Station",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station"
+                ],
+                "summary": "Erstellt eine Station",
+                "responses": {
+                    "200": {
+                        "description": "Station erstellt",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/stations/{Mac}": {
+            "get": {
+                "description": "Gibt eine Station basierend auf der angegebenen Mac Adresse wieder",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station"
+                ],
+                "summary": "Gibt eine Station wieder",
+                "responses": {
+                    "200": {
+                        "description": "Station wiedergegeben",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updated eine Station basierend auf der angegebenen Mac Adresse",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station"
+                ],
+                "summary": "Updated eine Station",
+                "responses": {
+                    "200": {
+                        "description": "Station geupdated",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Löscht eine Station basierend auf der angegebenen Mac Adresse",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Station"
+                ],
+                "summary": "Löscht eine Station",
+                "responses": {
+                    "200": {
+                        "description": "Station gelöscht",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
