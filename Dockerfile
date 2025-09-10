@@ -19,6 +19,12 @@ COPY --from=builder /app/gps-no-server .
 
 RUN mkdir -p /app/data
 
+#RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+#RUN swag init -g cmd/server/main.go -o ./.devcontainer/docs
+
+# Funktioniert noch nicht. Bis das funktioniert muss bei änderung der Routen kommentare im Hauptordner "swag init -g cmd/server/main.go -o ./.devcontainer/docs" ausgeführt werden :)
+
 EXPOSE 8080
 
 CMD ["./gps-no-server"]

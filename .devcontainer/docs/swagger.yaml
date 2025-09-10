@@ -1,10 +1,5 @@
-basePath: /api/v1
-host: localhost:8080
 info:
   contact: {}
-  description: Dies ist die API für den GPS-NO Server.
-  title: GPS-NO Server API
-  version: "1.0"
 paths:
   /clusters:
     get:
